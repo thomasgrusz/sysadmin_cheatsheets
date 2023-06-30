@@ -118,6 +118,7 @@ git diff HEAD	                compare working tree with last commit
 git diff —staged	            compare index with last commit
 
 git diff-tree COMMIT-HASH	    display list of files added or modified in COMMIT-HASH, i.e. if only one commit is given, it is compared to its parent. with 2 commits, the comparison is between those 2 commits.
+git --name-only HEAD HEAD~1     display list of files added or modified in last commit compared to parent commit
 
 git restore file	            copies index to worktree (i.e. destroys current work on file)
 git checkout file	            same as 'git restore file'
