@@ -14,35 +14,38 @@ config files:
                                         clone the git repo into 'opt` folder and start on demand with e.g. ':packadd nerdtree`
 commands:
 ---------
-%s/old/new/g                            global text replacement
+:%s/old/new/g                           global text replacement
+:s/old/new/g                            text replacement on current line
+:10,15s/old/new/g                       text replacement on lines 10-15 inclusive
+:10,$s/old/new/g                        text replacement on lines 10-end
 
-e <file>                                open file in new buffer (in same window)
-enew                                    open empty new buffer
-buffers                                 list all buffers
-bn                                      hop to next buffer
-bp                                      hop to previous buffer
-b3                                      go to buffer 3
-bd                                      delete buffer (close buffer and window)
-ball                                    load all buffers
+:e <file>                               open file in new buffer (in same window)
+:enew                                   open empty new buffer
+:buffers                                list all buffers
+:bn                                     hop to next buffer
+:bp                                     hop to previous buffer
+:b3                                     go to buffer 3
+:bd                                     delete buffer (close buffer and window)
+:ball                                   load all buffers
 
-split                                   split window horizontally
-vsplit                                  split window vertically
-new                                     open a new, empty buffer in a new window above
-below new                               open a new, empty buffer in a new window below
-new <file>                              open file in a new window above
+:split                                  split window horizontally
+:vsplit                                 split window vertically
+:new                                    open a new, empty buffer in a new window above
+:below new                              open a new, empty buffer in a new window below
+:new <file>                             open file in a new window above
 
-tabnew <file>                           open file in a new tab
-tabn                                    hop to next tab
-tabp                                    hop to previous tab
-tabfirst                                hop to first tab
-tablast                                 hop to last tab
-tabclose                                closetab
+:tabnew <file>                          open file in a new tab
+:tabn                                   hop to next tab
+:tabp                                   hop to previous tab
+:tabfirst                               hop to first tab
+:tablast                                hop to last tab
+:tabclose                               closetab
 
 ml                                      set bookmark using letter 'l'
 'l                                      go to beginning of bookmark line
 `l                                      go to exact bookmark l
-marks                                   show all bookmarks
-delmarks l                              delete bookmark l
+:marks                                  show all bookmarks
+:delmarks l                             delete bookmark l
 
 qa                                      record macro a
 q                                       stop recording
@@ -53,17 +56,20 @@ q                                       stop recording
 "ap                                     paste register a
 "%p                                     print current file name
 
-set number                              switch on line numbers
-set nonumber                            switch off line numbers
-set relativenumber                      switch on relative line numbers
-set norelativenumber                    switch off relative line numbers
+q:                                      browse commands history, enter to execute
 
-colorscheme desert                      set colorscheme to desert
-syntax off                              get rid of all color highlighting
+:set number                             switch on line numbers
+:set nonumber                           switch off line numbers
+:set relativenumber                     switch on relative line numbers
+:set norelativenumber                   switch off relative line numbers
 
-set runtimepath?                        list all folders vim looks for config files in
+:colorscheme desert                     set colorscheme to desert
+:set colorcolumn=80                     color column 80 as EOL mark
+:syntax off                             get rid of all color highlighting
 
-let mapleader = "\\"                    set the <leader> key to \
+:set runtimepath?                       list all folders vim looks for config files in
+
+:let mapleader = "\\"                   set the <leader> key to \
 
 
 edit remote files:
