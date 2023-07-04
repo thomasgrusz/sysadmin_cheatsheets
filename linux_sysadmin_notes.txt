@@ -695,6 +695,8 @@ dpkg -C vim                                     search for broken installed pack
 debconf-show cups                               show configuration of package
 apt-cache policy vim                            show repos from which package was downloaded
 apt-get -f libglib2.0-0                         fix broken package
+apt-mark hold apache2                           pin the package version and prevent upgrading
+apt-mark unhold apache2                         unhold package
 
 PPA - Personal Package Archive (Ubuntu specific tool !)
 ------------------------------
@@ -1350,50 +1352,6 @@ do
 done
 
 
-Docker
-======
-sudo apt install docker.io
-sudo usermod -aG docker thomasgrusz
-
-docker search ubuntu                                                search for an existing ubuntu container image
-docker pull ubuntu                                                  download a container image
-docker rmi d54987324r98                                             remove local docker image using ID
-docker run -it ubuntu /bin/bash                                     start docker container and run bash application (=ENTRYPOIONT)
-exit                                                                exit and stop container
-docker ps -a                                                        list all containers, running and down
-docker start v9834df                                                start existing (shut down) contianer
-docker stop v9834df                                                 stop container when not in container terminal
-docker rm v9834df                                                   delete shutdown container
-docker info                                                         list infos about docker on the system
-
-docker run -dit -p 8080:80 ubuntu /bin/bash                         start container with port redirection host:8080 -> container:80
-apt update && apt install apache2                                   install apache webserver
-/etc/inid.d/apache2 start                                           start apache
-ctrl+p+q (simultaneously)                                           exit container, but keep container running
-docker commit 84357e73h ubuntu/apache-server:1.0                    create a new image from our new apache server container
-docker run 84357e73h ubuntu/apache-server:1.0 /bin/bash             create container based our new image
-
-create a Dockerfile to automatically build docker images
---------------------------------------------------------
-mkdir ubuntu-apache-server
-cd ubuntu-apache-server
-vim Dockerfile:
-
-FROM ubuntu
-MAINTAINER Thomas Grusz <thomas.grusz@gmail.com>
-# avoid confirmation messages
-ARG DEBIAN_FRONTEND=noninteractive
-# update container packages
-RUN apt update; apt dist-upgrade -y
-# install apache and vim
-RUN apt install -y apache2 vim-nox
-# start apache
-ENTRYPOINT apache2ctl -D FOREGROUND
-
-docker build -t ubuntu/apache-server:1.0 .                          build a new docker image based on the present Dockerfile
-docker run -dit -p 8080:80 ubuntu/apache-server:1.0                 create a container based on the newly built docker image
-
-
 Virtualisation
 ==============
 KVM
@@ -1460,6 +1418,189 @@ lxc file push mytext mycontainer/home/ubuntu/file   copy a the local file 'mytex
 lxc file pull mycontainer/home/ubuntu/jack.txt .    cope a file from the container to the local filesystem
 
 
+Docker
+------
+sudo apt install docker.io
+sudo usermod -aG docker thomasgrusz
 
+docker search ubuntu                                                search for an existing ubuntu container image
+docker pull ubuntu                                                  download a container image
+docker rmi d54987324r98                                             remove local docker image using ID
+docker run -it ubuntu /bin/bash                                     start docker container and run bash application (=ENTRYPOIONT)
+exit                                                                exit and stop container
+docker ps -a                                                        list all containers, running and down
+docker start v9834df                                                start existing (shut down) contianer
+docker stop v9834df                                                 stop container when not in container terminal
+docker rm v9834df                                                   delete shutdown container
+docker info                                                         list infos about docker on the system
+
+docker run -dit -p 8080:80 ubuntu /bin/bash                         start container with port redirection host:8080 -> container:80
+apt update && apt install apache2                                   install apache webserver
+/etc/inid.d/apache2 start                                           start apache
+ctrl+p+q (simultaneously)                                           exit container, but keep container running
+docker commit 84357e73h ubuntu/apache-server:1.0                    create a new image from our new apache server container
+docker run 84357e73h ubuntu/apache-server:1.0 /bin/bash             create container based our new image
+
+create a Dockerfile to automatically build docker images
+--------------------------------------------------------
+mkdir ubuntu-apache-server
+cd ubuntu-apache-server
+vim Dockerfile:
+
+FROM ubuntu
+MAINTAINER Thomas Grusz <thomas.grusz@gmail.com>
+# avoid confirmation messages
+ARG DEBIAN_FRONTEND=noninteractive
+# update container packages
+RUN apt update; apt dist-upgrade -y
+# install apache and vim
+RUN apt install -y apache2 vim-nox
+# start apache
+ENTRYPOINT apache2ctl -D FOREGROUND
+
+docker build -t ubuntu/apache-server:1.0 .                          build a new docker image based on the present Dockerfile
+docker run -dit -p 8080:80 ubuntu/apache-server:1.0                 create a container based on the newly built docker image
+
+
+Kubernetes
+==========
+Preliminary setup of nodes
+--------------------------
+- install all updates
+
+- set hostname
+
+- set static IP oder static lease from DHCP server for each node
+
+- Raspberry Pi: set boot options
+    /boot/firmware/cmdline.txt:
+    cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1 swapaccount=1
+
+- install containerd:
+    sudo apt install containerd
+    systemctl status containerd
+    sudo mdkir /etc/containerd
+    containerd config default | sudo tee /etc/containerd/config.toml
+    sudo vim /etc/containerd/config.toml:
+        find the line: [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+        several lines below change: SystemCgroup = false
+                                    SystemCgroup = true
+
+- switch off swap:
+    sudo swapoff -a
+    comment out the 'swap` line in /etc/fstab
+
+- enable bridging:
+    sudo vim /etc/sysctl.conf:
+        uncomment:  net.ipv4.ip forward=1
+
+- Add the /etc/modules-load.d/k8s.conf file with the 'br_netfilter` module listed inside
+    sudo vim /etc/modules-load.d/k8s.conf:
+        br_netfilter
+
+Installing Kurbernetes (on all nodes, controller and worker nodes)
+----------------------
+sudo mkdir /etc/apt/keyrings
+sudo chown :thomasgrusz /etc/apt/keyrings
+sudo chmod g+w /etc/apt/keyrings
+
+curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt update
+sudo apt install kubeadm kubectl kubelet
+
+Initialize the cluser (on the controller node ONLY !!!)
+-------------------------------------------------------
+sudo kubeadm init --control-plane-endpoint=192.168.50.80 --node-name=controller --pod-network-cidr=10.244.0.0/16
+
+The --control-plane-endpoint should equal to the static IP address of the control node.
+The --node-name=controller should equal to the chosen hostname for the control node.
+The --pod-network-cidr=10.244.0.0/16 should not be changed, as it perains to the internal kubernetes pod network (not nodes network, =overlay).
+
+Copy the 2 'kubeadm join` commands, the first is to join control-plane nodes, the second for joining worker nodes:
+kubeadm join 192.168.50.80:6443 --token pvxt5i.6ecserl66un7hpnl \
+	--discovery-token-ca-cert-hash sha256:c3650f06488028aec213aba807c8605ef195b96249446c451a607b7fb2d2aa55 \
+	--control-plane
+
+kubeadm join 192.168.50.80:6443 --token pvxt5i.6ecserl66un7hpnl \
+	--discovery-token-ca-cert-hash sha256:c3650f06488028aec213aba807c8605ef195b96249446c451a607b7fb2d2aa55
+
+Run these 3 commands on the controller:
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Check the kubernets system pods already running, notice some are pending, becaus of the lack of an overlay network:
+kubectl get pods --all-namespaces
+
+Create an overlay network:
+kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+Check the kubernetes system pods again, now all pods should be runnting.
+
+Join worker nodes to the cluster
+--------------------------------
+Check the status of all nodes (run on controller node!):
+kubctl get nodes
+
+Run the above command with sudo in front to join the worker node to the cluster (run on worker nodes):
+sudo kubeadm join 192.168.50.80:6443 --token pvxt5i.6ecserl66un7hpnl --discovery-token-ca-cert-hash sha256:c3650f06488028aec213aba807c8605ef195b96249446c451a607b7fb2d2aa55
+
+Check if the new worker nodes are running by running this on the controller node:
+kubctl get nodes
+
+In case of trouble joining another worker node, we can retry with a new join-token (run on controller node):
+kubeadm token create --print-join-command
+
+Deploy an nginx container defined in a pod.yml file (on the controller node):
+-----------------------------------------------------------------------------
+pod.yml:
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-example
+  labels:
+    app: nginx
+spec:
+  containers:
+    - name: nginx
+      image: linuxserver/nginx
+      ports:
+        - containerPort: 80
+          name: "nginx-http"
+
+kubectl apply -f pod.yml
+
+Check the new pod with:
+kubectl get pods
+
+To see on which worker node the new pod is running, we use:
+kubectl get pods -o wide
+
+Make the cluster accessible to the LAN (run on controller node):
+----------------------------------------------------------------
+vim service-nodeport.yml:
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-example
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      nodePort: 30080
+      targetPort: nginx-http
+  selector:
+    app: nginx
+
+Add the nodeport service to the cluster:
+kubectl apply -f service-nodeport.yml
+
+Decommission a pod or service on the clouster:
+----------------------------------------------
+kubectl delete pod nginx-example
+kubectl delete service nginx-example
 
 
