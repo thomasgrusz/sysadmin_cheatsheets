@@ -1352,6 +1352,263 @@ do
 done
 
 
+Samba
+=====
+Basics
+------
+Samba has 2 layers of permissions/authentications. The first is the filesystem permissions of the shared folder and the second is the 'samba user' authentication.
+To set up a samba share, we first create a folder e.g. '/data' and give user, group and world permissions.
+Then we have 2 options, either we create a share (in /etc/samba/smb.conf) with guest permissions, or with user and/or group permissions.
+
+In case of the "guest share", we need to have world permissions set on the share and the line "guest ok = yes" in samba.conf.
+Avoid putting in the line 'valid users = user1 ,user2', or the guest login does not work.
+
+In case of a "user/group share" we need to set the permissions of the shared folder accordingly and add the following lines to samba.conf:
+The users need to be system users AND samba users (sudo smbpasswd -a tom && sudo smbpasswd -e tom):
+
+#1 users tom and stephen have read access
+path = /data
+valid user = tom, stephen
+
+#2 users tom and stephen have read/write access, new files will have 666 perms, and folders 777
+path = /data
+valid user = tom, stephen
+read only = no                      (OR 'writable = yes', which is the old format)
+create mask = 666
+directory mask = 777
+
+#3 user tom has read/write access, user stephen has only read access
+path = /data
+read list = stephen
+write list = tom
+
+Specifics
+---------
+sudo apt install samba
+sudo systemctl stop smbd
+
+JAY LACOIX (no guest, but forced user 'myuser':
+-----------
+configuration file: /etc/samba/smb.conf
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.orig
+sudo vim /etc/samba/smb.conf:
+    [global]
+    server string = File Server
+    workgroup = WORKGROUP
+    security = user
+    map to guest = Bad User
+    name resolve order = host bcast wins
+    include = /etc/samba/smbshared.conf
+
+sudo vim /etc/samba/smbshared.conf:
+    [Documents]
+    path = /share/documents
+    force user = myuser
+    force group = users
+    public = yes
+    writable = no
+
+    [Public]
+    path = /share/public
+    force user = myuser
+    force group = users
+    create mask = 0664
+    force create mode = 0664
+    directory mask = 0777
+    force directory mode = 0777
+    public = yes
+    writable = yes
+
+Each stanza is a share name. Windows users can access both shares as follows:
+\\servername\Documents
+\\servername\Public
+
+Create the user and group, that a guest user is forced to become, when accessing the samba servers:
+sudo useradd -s /bin/false myuser
+sudo groupadd users
+
+Create folders for both shares and set the correct permissions:
+sudo mkdir -p /share/{documents,public}
+sudo chown -R myuser:users /share
+
+Test the samba configuration files for errors:
+testparm
+
+sudo systemctl start smbd.service
+systemctl status smbd.service
+
+Now we can acces the samba shares from remote hosts.
+In Linux filemanagers we can use the 'Other Locations' section and add 'smb://servername/Public'
+
+In case of problems, install the two packages:
+sudo apt install smbclient cifs-utils
+
+Connect to the remote share via command line (smbclient):
+sudo mkdir /etc/samba           (to get rid of an annoying error message)
+sudo touch /etc/samba/smb.conf
+smbclient //fileserver1/DATA -U thomasgrusz
+smb: \> help
+
+We can also mount the samba share in the terminal (cifs-utils):
+sudo mkdir /mnt/public
+sudo mount -t cifs //severname/Public -o username=myuser,password=mypassword /mnt/public
+However, /mnt/public folder is mounted as root:root, with 755 permissions.
+
+But we can moutn the share defining user:group with 'uid' and 'gid' and turning off local(!) permissions with 'noperm', server permissions still apply:
+sudo mount -t cifs //severname/Public -o username=thomasgrusz,password=mypassword,uid=thomasgrusz,gid=editors,noperm /mnt/public
+
+We can also add an entry to /etc/fstab:
+//servername/share/public /mnt/public cifs username=myuser,noauto 0 0
+
+OTHER EXAMPLE WITH AUTHENTICATION:
+-------------------------------
+/etc/samba/smb.conf:
+[global]
+workgroup = WORKGROUP
+
+[DATA]
+path = /data
+valid users = @editors
+browsable = yes
+read only = no
+
+sudo groupadd editors
+sudo usermod -aG editors thomasgrusz
+sudo smbpasswd -a thomasgrusz               add user to samba and set samba password (this user is different from the linux system user, despite having the same name)
+sudo smbpasswd -e thomasgrusz               enable smaba user
+sudo mkdir /data
+sudo chown -R :editors /data
+sudo systemctl restart smbd
+
+Access the share in a file manager as:
+smb://fileserver1/DATA
+
+SPECIAL SECTION - HOME FOLDER ON THE FLY
+----------------------------------------
+There is an easy solution to provide all users of a samba server with access to their homefolder:
+
+samba.conf:
+[home]
+read only = no
+
+smbclient //fileserver1/homes -U thomasgrusz
+smbclient //fileserver1/homes -U alice
+
+
+NFS Shares
+==========
+Server
+------
+sudo apt install nfs-kernel-server
+sudo mkdir /exports
+sudo mkdir /exports/documents
+
+/etc/exports:
+/exports/documents 192.168.50.0/255.255.255.0(rw,no_subtree_check)                  (man exports for help)
+
+The IP range is the network from which a client is allowed to connect from.
+
+/etc/idmap.conf:
+Domain = b47-homenet
+
+This configuration file is responsible for mapping user IDs from client to server, i.e. the UIDs.
+
+sudo systemctl restart nfs-kernel-server
+
+If you change the configuration file '/etc/exports' and have clients using the service do not use 'systemctl restart', but:
+sudo exportfs -a
+
+Client
+------
+sudo apt install nfs-common
+sudo mkdir /mnt/documents
+sudo mount fileserver1:/exports/documents /mnt/documents
+
+Additional points:
+------------------
+To make it easier for the user we can include a line in the '/etc/exports' config file, that allows users to ommit the nfs-base-folder, e.g. '/exports:
+/etc/exports:
+/exports *(ro,fsid=0,no_subtree_check)
+
+Now the user can mount the documents share simply with:
+sudo mount fileserver1:/documents
+
+
+MariaDB
+=======
+sudo apt install mariadb-server
+systemctl status mariadb
+
+sudo mysql_secure_installation
+This adds security to the mariadb installation. Choose 'no' to unix_socket authentication. Otherwise choose the defaults.
+
+The daemon config file is:
+/etc/mysql/mariadb.cnf
+
+sudo mariadb
+OR
+mariadb -u root -p
+This allows to connect to the database shell using the root account password we just created (not the same as system root).
+
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'passwd';
+FLUSH PRIVILEGES;
+This creates an administrative mariadb user.
+'localhost' can be replaced by '192.168.50.%' for restriced access to particular netowrk or '%' for everywhere.
+
+GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost';
+FLUSH PRIVILEGES;
+Set permissions, i.e. grant full access to admin user. The admin user can manage all databases, but not users (-> root).
+
+GRANT SELECT ON *.* TO 'readonlyuser'@'localhost' IDENTIFIED BY 'password';
+FLUSH PRIVILEGES;
+This creates a new read-only user and grants these permissions at the same time.
+'SELECT' means read and '*.*' means all databases. In the wild, we usually would restrict a readonly user to one database only.
+
+CREATE DATABASE mysampledb;
+SHOW DATABASES;
+
+SELECT HOST, USER, PASSWORD FROM mysql.user;
+list certain fields from the user table in the 'mysql' database
+
+GRANT SELECT ON mysampledb.* TO 'appuser'@'localhost' IDENTIFIED BY 'password';
+Create a readonly-user restricted to the 'mysampledb' database
+If we replace 'SELECT' with 'ALL', then the user has full access to the database mysampledb.
+
+SHOW GRANTS FOR 'appuser'@'localhost';
+Check the grants for a particular user.
+
+DROP USER 'appuser'@'localhost'
+Delete a user
+
+USE mysampledb;
+Select the 'mysampldb' database
+
+CREATE TABLE Employees (Name char(15), Age int(3), Occupation char(15));
+Create a table in the selected database named 'Employees' with the fields 'Name', 'Age', 'Occupation'.
+
+SHOW COLUMNS IN Employees;
+Check the fields in the table 'Employees'
+
+INSERT INTO Employees VALUES ('Joe Smith', '26', 'Ninja');
+Insert a record into the table 'Employees'.
+
+SELECT * FROM Employees;
+Display table with selection of records from the table 'Employees' in the database 'mysampledb'.
+
+DELETE FROM Employees WHERE Name = 'Joe Smith';
+
+DROP TABLE Employees;
+Delete the table 'Employees' from the mysampledb database.
+
+DROP DATABASE mysampledb;
+Delete the entire database named 'mysampledb';
+
+mysqldump -u admin -p --databases mysampledb > mysampledb.sql
+Backup the database mysampledb.sql
+
+sudo mariadb -u admin -p < mysampledb.sql
+
+
 Virtualisation
 ==============
 KVM
@@ -1603,4 +1860,8 @@ Decommission a pod or service on the clouster:
 kubectl delete pod nginx-example
 kubectl delete service nginx-example
 
+
+Simple Python Webserver
+=======================
+python3 -m http.server 8080
 
