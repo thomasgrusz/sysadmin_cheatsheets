@@ -231,6 +231,7 @@ at now + 5 minutes
 at 16:00 + 3 days
 /etc/at.allow                                   whitelist users for at
 /etc/at.deny                                    blacklist users
+*/5 * * * * sudo apt apdate                     example crontab: update package cache every 5 minutes
 sudo systemd-run --on-active=5m                 one time timer 5minutes in the future
 sudo systemd-run --on-calendar '2023-04-06 10:00' sh -c '/usr/bin/date >> /home/thomasgrusz/datetime.txt'
 
@@ -1607,6 +1608,342 @@ mysqldump -u admin -p --databases mysampledb > mysampledb.sql
 Backup the database mysampledb.sql
 
 sudo mariadb -u admin -p < mysampledb.sql
+
+
+Web Server
+==========
+Apache on Ubuntu
+----------------
+sudo apt install apache2
+systemctl status apache2
+
+main Apache conf file:   /etc/apache2/apache2.conf
+
+document root:           /var/www/html/
+host config files:       /etc/apache2/sites-available
+
+Steps for setting up a webserver:
+1. upload website files to a dedicated directory in /var/www/ (document root)
+2. ensure ownership and rwx permissions to www-data user
+3. create conf file in /etc/apache2/sites-available/
+4. enable site by reloading Apache
+
+sudo a2ensite /etc/apache2/sites-available/virtual-host-configuration.conf
+Enable site (creates a symlink in /etc/apache2/sites-enabled
+
+sudo a2dissite /etc/apache2/sites-available/virtual-host-configuration.conf
+Disables a site
+
+Default host config file '/etc/apache2/sites-available/000-default.conf' :
+<VirtualHost *:80>
+	ServerAdmin webmaster@localhost
+	DocumentRoot /var/www/html
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+If we want to serve another site on the same server we create another config file in /etc/apache2/sites-available and enable it.
+If we have two NICs with two IP addresses we can use 2 config files with 2 different incomming IP addresses:
+<VirtualHost 192.168.50.104:80>
+AND
+<VirtualHost 192.168.50.105:80>
+
+If we only have one NIC, we can differentiate the sites by name as follows (mind the 'ServerName' line):
+<VirtualHost *:80>
+	ServerName mindcode.com
+	ServerAdmin webmaster@localhost
+	DocumentRoot /var/www/mindcode
+	ErrorLog ${APACHE_LOG_DIR}/mindcode.com-error.log
+	CustomLog ${APACHE_LOG_DIR}/mindcode.com-access.log combined
+</VirtualHost>
+
+Apache modules
+--------------
+apt search libapache2-mod
+search for apache modules
+
+important modules:
+libapache2-mod-python
+libapache2-mod-php8.1
+
+apache2 -l
+list built-in apache modules
+
+a2enmod
+list installed modules
+
+sudo a2enmod php8.1
+sudo systemctl restart apache2
+enable the php module
+
+sudo a2dismod php8.1
+sudo systemctl restart apache2
+disable module
+
+apachectl -M
+list enabled modules
+
+Securing Apache with TLS
+------------------------
+sudo ss -tulnp | grep apache
+check on what ports apache is listening to
+
+sudo a2enmod ssl
+enable ssl module to start HTTPS support
+
+Apache's default ssl configuration file for an HTTPS site:
+/etc/apache2/sites-available/default-ssl.conf:
+<IfModule mod_ssl.c>
+	<VirtualHost _default_:443>
+		ServerAdmin webmaster@localhost
+		DocumentRoot /var/www/html
+		ErrorLog ${APACHE_LOG_DIR}/error.log
+		CustomLog ${APACHE_LOG_DIR}/access.log combined
+		SSLEngine on
+		SSLCertificateFile	/etc/ssl/certs/ssl-cert-snakeoil.pem
+		SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+		<FilesMatch "\.(cgi|shtml|phtml|php)$">
+				SSLOptions +StdEnvVars
+		</FilesMatch>
+		<Directory /usr/lib/cgi-bin>
+				SSLOptions +StdEnvVars
+		</Directory>
+	</VirtualHost>
+</IfModule>
+
+Important:
+<VirtualHost _default_:443>             The server is listening on "any" (default) connections on port 443, that is not covered by a virtual host stanza.
+
+
+sudo a2ensite default-ssl.conf
+enable the Apache's default HTTPs site
+
+Now we need to install a certificate, either self-signed or from an authority and create a folder for the certificate.
+sudo mkdir /etc/apache2/certs
+
+Self-signed certification and key:
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/certs/mysite.key -out /etc/apache2/certs/mysite.crt
+
+Now we need to configure Apache to use them.
+sudo vim /etc/apache2/sites-available/default-ssl.conf:
+ServerName mindcode.com:443
+SSLCertificateFile /etc/apache2/certs/mysite.crt
+SSLCertificateKeyFile /etc/apache2/certs/mysite.key
+
+sudo systemctl reload apache2
+
+NGINX on Ubuntu
+---------------
+sudo apt install nginx
+
+Default config files:
+/etc/nginx
+
+Default nginx conf file '/etc/nginx/sites-available/default:
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+	server_name _;
+	location / {
+		try_files $uri $uri/ =404;
+	}
+}
+
+If we want to serve multiple sites from a server, we need to remove the 'default_server' part from the additional config files,
+as nginx can only have one default server. Also change the 'server_name' line.
+
+To enable sites we need to manually create a symlink:
+sudo ln -s /etc/nginx/sites-available/mysite.com /etc/nginx/sites-enabled/mysite.com
+sudo systemctl reload nginx
+
+The default nginx site is enabled by default.
+
+Enable TLS for nginx
+--------------------
+Ensure you have certification and key files.
+In the config file change the listening port from 80 to 443 and add the 3 'ssl' lines as below:
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+	root /var/www/mindcode;
+	index index.html index.htm index.nginx-debian.html;
+	server_name mindcode.com;
+	ssl_certificate /etc/nginx/certs/mysite.crt;
+	ssl_certificate_key /etc/nginx/certs/mysite.key;
+	ssl_session_timeout 5m;
+	location / {
+		try_files $uri $uri/ =404;
+	}
+}
+
+Finally, we can add a directive to the default site, that redirects all HTTP requests as an HTTPS request,
+so that only HTTPS requests are served, no HTTP requests will be served.
+Add the following directive below the listen directives in /etc/nginx/sites-available/default:
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	return 301 https://$host$request_uri;
+    ...
+
+
+Ansible
+=======
+There are 2 methods for Ansible to managa configurations on servers.
+1. Push - there is a workstation with a list of server IPs and Ansible installed, configurations are pushed to all listed servers via Ansible commands.
+2. Pull - Ansible is installed on ALL servers, and a cronjob regularly pulls configurations from a github repo.
+
+Push
+----
+1. install ansible on a workstation or control server: sudo apt install ansible
+2. create an 'ansible' user on the control server and every client node
+3. setup the ansible user on the controll server to ssh into client nodes WITHOUT password (ssh-copy-id -i ~/.ssh/id_ed25519.pub client_IP)
+4. configure sudo on client machines, so that the Ansible user can execute sudo WITHOUT password:
+    sudo vim /etc/sudoers.d/ansible:
+        ansible ALL=(ALL) NOPASSWD: ALL
+    sudo chown root:root /etc/sudoers.d/ansible
+    sudo chmod 440 /etc/sudoers.d/ansible
+
+On the controller create a folder for the ansible files and a 'hosts' (inventory) file with the client's IP addresses:
+sudo mkdir /etc/ansible
+sudo touch /etc/ansible/hosts
+sudo chown ansible /etc/ansible/hosts
+sudo chmod 600 /etc/ansible/hosts
+Put each server IP or name on one line in the hosts file.
+
+The general ansible config file is /etc/ansible/ansible.cfg.
+In this file, we can change the hosts-file with server inventory (above), the remote user (ansible) and the PRIVATE ssh key (e.g. ~/.ssh/ansible):
+    [defaults]
+    inventory = /etc/ansible/hosts
+    remote_user = ansible
+Ansible also looks for a ~/.ansible.cfg or local ./ansible.cfg file in the cwd, this is practical in case we want to run ansible from within a cloned git repo.
+
+Test the ansible configuration with the ping module:
+ansible all -m ping
+
+Playbooks
+---------
+Playbooks are .yml files, where ansible instructions are listed and can be run against the servers listed in the inventory file (cf. above).
+
+To run playbooks:
+ansible-playbook packages.yml
+
+playbook to install the git,htop and vim-nox packages
+packages.yml:
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Install packages
+    ansible.builtin.apt:
+      name:
+        - git
+        - htop
+        - vim-nox
+
+playbook to copy files to the client servers
+copy_files.yml:
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: copy SSH motd
+    ansible.builtin.copy:
+      src: motd
+      dest: /etc/motd
+
+playbook to configure an apache webserver including website
+apache.yml:
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Install Apache
+    ansible.builtin.apt:
+      name: apache2
+  - name: Start the apache2 services
+    ansible.builtin.service:
+      name: apache2
+      state: started
+      enabled: true
+  - name: Copy index.html
+    ansible.builtin.copy:
+      src: index.html
+      dest: /var/www/html/index.html
+
+Pull
+----
+In a dynamic environment, typically cloud, where virtual servers are quickly created and destroyed,
+Ansible's pull method is easier to manage the server inventory, as we do not have to maintain an inventory file.
+We just install Ansible and Git on each servers and have a cronjob downloading a local playbook from a git repo
+and have Ansible execute it locally. Run the 'ansible-pull' command as the 'ansible' user, having sudo powers:
+
+ansible-pull -U https://github.com/thomasgrusz/ansible.git
+
+If we do not specify a playbook, Ansible expects one named 'local.yml' in the repo root.
+However, we can specify a playbook:
+
+ansible-pull -U https://github.com/thomasgrusz/ansible.git playbooks/apache.yml
+
+In the playbook we need to change the 'hosts: all' line to 'hosts: localhost', as we run the playbook locally:
+
+local.yml:
+---
+- hosts: localhost
+  become: true
+  tasks:
+  - name: Install Apache
+    ansible.builtin.apt:
+      name: apache2
+  - name: Start the apache2 services
+    ansible.builtin.service:
+      name: apache2
+      state: started
+      enabled: true
+  - name: Copy index.html
+    ansible.builtin.copy:
+      src: index.html
+      dest: /var/www/html/index.html
+
+The crontab could look like this for running the playbook every 5 minutes:
+*/5 * * * * ansible-pull -U https://github.com/thomasgrusz/ansible.git
+
+Commands
+--------
+ansible all --key-file ~/.ssh/id_ed25519 -i /etc/ansible/hosts -m ping                              ping all clients
+ansible all --list-hosts                                                                            list all hosts
+ansible all -m gather_facts                                                                         get information about the client servers
+ansible all -m gather_facts --limit mariadb1                                                        get information about a specific server
+ansible all -m apt -a update-cache=true --become                                                    update apt cache on clients, become the root user
+ansible all -m apt -a update-cache=true --become --ask-become-pass                                  update apt cache on clients, become the root user and ask for the root password
+ansible-playbook --list-tags apache.yml                                                             list tags inside playbook
+ansible-playbook --tags apache2 -ask-become-pass site.yml                                           only run plays and tasks tagged with 'apache2' inside the 'site.yml' playbook
+
+
+Features
+--------
+- conditions "when:"
+- pre-tasks:
+- tags: always
+- groups [webserver]
+- templates
+- roles
+- host_variables
+
+Modules
+-------
+apt
+dnf
+copy
+unarchive https://...com/.../something.zip
+service
+lineinfile
+user
+authorized_key
+
+List of ansible.builtin. modules:
+https://docs.ansible.com/ansible/latest/collections/index_module.html#ansible-builtin
 
 
 Virtualisation
