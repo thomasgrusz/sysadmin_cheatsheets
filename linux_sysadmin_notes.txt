@@ -404,6 +404,7 @@ ulimit -Hf                                      filesize hardmax in blocks
 ulimit -f 1000                                  set soft- and hardlimit to 1000 blocks per file
 /etc/secutiry/limits.conf                       configuration file for lmiits
 
+
 find command
 ============
 find / -maxdepth 2 -name "*.txt"                find all .txt files 2 levels in from root
@@ -695,7 +696,7 @@ dpkg-reconfigure vim                            reconfigure an installed package
 dpkg -C vim                                     search for broken installed packages and suggest fixes
 debconf-show cups                               show configuration of package
 apt-cache policy vim                            show repos from which package was downloaded
-apt-get -f libglib2.0-0                         fix broken package
+apt-get -f instal libglib2.0-0                  fix broken dependencies of package
 apt-mark hold apache2                           pin the package version and prevent upgrading
 apt-mark unhold apache2                         unhold package
 
@@ -1062,6 +1063,8 @@ Consol Setup
 =============
 sudo dpkg-reconfigure console-setup             choose font and fontsize for virtual console
 
+/etc/default/console-setup:
+ACTIVE_CONSOLES="/dev/tty[1-6]"                 choose how many VT you want to have active
 
 BIOS & UEFI
 ===========
@@ -2202,3 +2205,296 @@ Simple Python Webserver
 =======================
 python3 -m http.server 8080
 
+
+Securing your server - reducing the attack surface
+==================================================
+1.  sudo ss -tulpn                          get a list of listening ports (0.0.0.0 potentially bad)
+2.  -                                       review each service regarding best practices and configure accordingly
+3.  -                                       if any of the services are not needed, remove the package
+4. dpkg --get-selections > list.txt         research each package and if sure, that it is not needed, remove the package
+5. -                                        make a list of uneccessary packages and create an Ansible playbook to make sure they are not installed
+6. apt-cache rdepends tmux                  check whether there are packages depending on the package you consider removing
+7. -                                        use strong passwords
+8. -                                        use 'principle of lease privilege' for all accounts
+                                                - reduce account's group memberships to minimum
+                                                - make network shares read-only by default
+                                                - audit servers for user accounts, that have not been logged in for a long time
+                                                - set account expirations for user accounts
+                                                - restrict accounts' access to minimal amount of system directories
+                                                - restric sudo to specific commands
+9. -                                        harden OpenSSH
+10.-                                        install and configure fail2ban
+11.-                                        install and configure a firewall
+
+Document ALL the changes made to the servers!
+Subscribe to sites that report on CVEs.
+Test security updates on virtual clones before updating the production server (notice difference between 'apt upgrade' and 'apt dist-upgrade'
+
+If an upgrade of, e.g. the kernel, does not work out, we can revert to the old version in Ubuntu:
+    sudo dpkg -i /var/cache/apt/achives/linux-image-5.15.0-3-generic_5.15.0-30.31_amd64.deb
+'dpkg' does not resolve depencies, to fix this run:
+    sudo apt -f install
+
+Canonical offers 'kernel live update', where the kernel is updated in memory, without the need for a reboot.
+3 servers are free.
+Cave: The package needs to be updated with apt anyhow, when you are rebooting the system in the future.
+Sudo snap install canonical-livepatch
+sudo canonical-livepatch enable <token>
+
+Unattended upgrades
+-------------------
+sudo apt install unattended-upgrades
+systemctl status unattended-upgrades.service
+
+To activate unattended-upgrades, you need to ensure that the apt configuration stub /etc/apt/apt.conf.d/20auto-upgrades contains at least the following lines: 
+    APT::Periodic::Update-Package-Lists "1";
+    APT::Periodic::Unattended-Upgrade "1";
+Another way to do the same thing is to run the following command:
+    sudo dpkg-reconfigure -plow unattended-upgrades
+
+default config file:
+/etc/apt/apt.conf.d/50unattended-upgrades
+
+There are 2 timers for 'download' and for upgrade:
+/lib/systemd/system/apt-daily.timer
+/lib/systemd/system/apt-daily-upgrade.timer
+
+To create 'override files' in /etc/systemd/system/apt-daily*.d/override.conf, use:
+sudo systemctl edit apt-daily.timer
+sudo systemctl edit apt-daily-upgrade.timer
+
+Run 'unattended-upgrades' in debug mode (-d = --debug) and upgrade all security relevant packages:
+sudo unattended-upgrades -d --dry-run
+sudo unattended-upgrades -d
+
+Check the log file for apt installations:
+/var/log/apt/history.log
+
+OpenSSH
+-------
+Change some settings in the ssh config file '/etc/ssh/sshd_config':
+
+Port 22                                     Change the port number to something random -> reduces log clogging
+                                            Use 'ssh -p <new_port_number> ubuntuserver100'
+                                            Use 'scp -P <new_port_number> ubuntuserver:file.txt .
+
+Protocol 2                                  Make sure the ssh protocol is version 2, not 1
+AllowGroups sshuser                         Allow only members of these groups to access the system via ssh
+AllowUsers                                  Allow only these users to access ssh, AllowUsers overrides Allowgroups
+PermitRootLogin no                          Disable root login, use a sudo user account instead (default value: prohibit-password)
+PasswordAuthentication no                   Disable password authentication for normal accounts, copy an ssh pubkey to ~/.ssh/authorized_keys on the server
+
+
+Fail2Ban
+--------
+2 config files:
+/etc/fail2ban/jail.con                      can be overwritten by updates, don't use!
+/etc/fail2ban/jail.local                    use this one
+
+If you change the config file, restart the service:
+sudo systemctl restart fail2ban.service
+
+/etc/fail2ban/jail.local:
+ignoreip = 127.0.0.1/8 192.168.50.0/24      add IPs and networks for fail2ban to ignore, so you do not lock yourself out
+ignoreip = 192.168.50.173                   if you just want to ignore one IP, do not use the '/24' at the end
+bantime = 10m                               bantime is 10 minutes until a blocked ip can try again
+maxentry = 5                                max number of attemps until ban starts
+findtime = 10m                              a host gets banned, if 'maxentry' is reached in 'findtime' amount of time
+port = ssh                                  default is 22, change this number to whatever port you use for ssh (/etc/ssh/sshd_config)
+enable = true                               enable a jail (in the jails section, i.e. [sshd]
+
+sudo fail2ban-client status                 show all jails, that are enabled
+sudo fail2ban-client unban 192.168.50.63    lift a ban
+sudo fail2ban-client stop                   stop the fail2ban server
+sudo fail2ban-client start                  start the fail2ban server
+sudo fail2ban-client reload sshd            reload the fail2ban configuration files
+sudo fail2ban-client reload sshd            reload the sshd jail
+
+sudo iptables -S                            list the iptables rules
+sudo iptables -nL                           list the iptables numerically
+sudo iptables -L f2b-sshd -vn --line-numbers    view iptables fail2ban rules
+sudo iptables -D f2b-sshd 1             remove rule number 1 in the f2b-sshd chain
+
+sudo fail2ban-regex /var/log/auth.log /etc/fail2ban/filter.d/sshd.conf       run filter test on a log file
+
+Consider enabling the following jails:
+[ssh-ddos]
+[apache-modsecurity]                        if you are running SSL with Apache
+[apache-shellshock]                         protect Apache from a shellshock vulnerability
+[roundcube-auth]                            if you run a Roundcube mailserver
+[postfix]                                   if you run a postfix mailserver
+
+MariaDB
+-------
+Database servers should not be directly accessable from the internet.
+We can achieve this in serveral ways:
+
+1. lockdown of network server access
+
+In Debien/Ubuntu TCP wrappers are still usabel (not Fedora>=29).
+Check whether your OS' sshd supports TCP wrappers:
+ldd /usr/sbin/sshd | grep "libwrap"
+
+/etc/hosts.allow:
+sshd: 192.168.50.173                        allow access to a single IP address
+sshd: 192.168.50.                           wildcard for 192.168.50.*
+sshd: 192.168.50.0/24                       192.168.50.1 - 255 network
+sshd: LOCAL                                 allows incoming traffic from the local network
+
+/etc/hosts.deny:
+ALL: All
+
+This basically locks down all access to all services and allows the IP addresses in hosts.allow, which overrides hosts.deny. As soon as you save the file, the ban comes into effect, no need for any restart!
+
+2. strengthen user security
+Allow database users only local access, which means no network access (i.e. localhost):
+GRANT SELECTON mysampledb.* TO 'appuser'@'localhost' IDENTIFIED BY 'password';
+
+If we want to grant user access from the local /24 network we use:
+GRANT SELECTON mysampledb.* TO 'appuser'@'192.168.50.%' IDENTIFIED BY 'password';
+
+If we grant access to a subnet, we must make sure, that the workstations of the company's users are not on the same subnet.
+
+Firewalls
+---------
+UFW is a simple frontend to the 'iptables' firewall.
+Always configure this firewall BEFORE you enable it, or you may lock yourself out!
+
+sudo apt install ufw
+sudo ufw status
+
+sudo ufw allow from 192.168.50.173 to any port 22               allow onw IP access through port 22 (any = TCP or UDP)
+sudo ufw allow from 192.168.50.0/24 to any port 22              allow subnet access through port 22
+sudo ufw allow from 192.168.50.173                              allow one access through all ports (not recommended)
+sudo ufw allow 80                                               allow internet access through port 80
+sudo ufw allow 443
+
+sudo ufw enable
+
+Encrypting disk with LUKS
+-------------------------
+If the machine is a laptop, then the entire installation should be encrypted (theft!).
+
+Other than that, backup disks should also be encrypted:
+
+sudo apt install cryptsetup
+sudo cryptsetup luiksFormat /dev/sdb                             setup disk (wipes everythin)
+
+sudo cryptsetup luksOpen /dev/sdb backup_drive                  open the disk
+Now the drive can be accessed via /dev/mapper/backup_drive
+
+
+sudo mkfs.ext4 -L 'backup_drive' /dev/mapper/backup_drive       set ext4 filesystem and a label
+
+sudo mount /dev/mapper/backup_drive /media/backupdrive          mount the encrypted drive
+
+sudo umount /media/backupdrive                                  unmount the drive
+sudo cryptsetup luksClose /dev/mapper/backup_drive              close the drive
+
+To remount it again:
+sudo cryptsetup luksOpen /dev/sdb backup_drive
+sudo mount /dev/mapper/backup_drive /media/backupdrive
+
+Backups
+-------
+Have at least backups of your servers at 3 different locations, with at least one offsite.
+TEST your backups!!! Untested backups are worth nothing.
+
+Monitoring
+----------
+Monitor overall health of your servers with tools like
+- nagios
+- zabbix
+
+Check for:
+- uptime
+- diskspace
+- website availability
+- user checks if number > 1
+
+Business contiuity plan
+-----------------------
+- what is the plan to follow after an incident
+- how much time is estimated to have everything back up and runnign
+- autohealing (containers in a cluster)
+- automate server setup from backups
+
+
+Troubleshooting
+===============
+Evaluating the scope
+--------------------
+- sypmtoms?
+- first occurence of problem?
+- network changes around that time?
+- problem already happened before? - how was it fix?
+- which nodes are impacted?
+- how many users are impacted?
+
+Root cause analysis
+-------------------
+- description of the issue
+- what application or hardware encountered a fault?
+- date/time issue was noticed
+- findings
+- what has been done to fix the issue
+- what events, configurations or faults caused the isssue? 
+
+View system logs
+----------------
+journalctl -u ssh
+
+/var/log/*
+/var/log/syslog
+
+tail -f /var/log/apache2/access.log
+less /var/log/syslog
+zless /var/log/syslog.2.gz
+zcat /var/log/syslog.2.gz
+
+Tracing network issues
+----------------------
+check network cable is plugged in
+check if network cable works
+check routing   - ping default gateway
+                - traceroute an internal node
+                - traceroute an external node
+check dns       - ping known internal node (default gateway) by IP and by name
+                - nslookup myserver.local (find IP address of node) or 'dig' or 'host'
+                - resolvectl status (show DNS nameservers)
+                - temporarily switch local DNS provider to 8.8.8.8 or 8.8.4.4 (google's dns server)
+check hardware support, i.e. drivers    - sudo lspci -k | grep -i net
+                                        - download and install missing driver (check with lsmod)
+check dhcp      - check lack of available IP addresses (also check lease time)
+                - is the DHCP-daemon running (isc-dhcp-server)
+                - are hosts' clocks out-of-sync
+                    - install and check 'ntp' on all nodes
+                    - check if timestamps of dhcp leases in log files on the server and client match
+                    - use Ansible to ensure NTP configured and running properly on all nodes
+
+Troubleshooting resource issues
+-------------------------------
+Storage:
+df -h
+df -i
+du -cksh * | sort -hr | head -n 15          list the 15 largest folders in the current working directory
+sudo ncdu -x /                              n-curses based tui tool to find large folders
+sudo touch /forcefsck                       create an empty file, that forces a root filesystem check at the next reboot (file will be deleted)
+
+Memory:
+free -m
+sudo htop
+sudo iotop
+
+Hardware:
+Often breaks:   - fans
+                - power suppply
+                - hard-disks
+                - memory
+                - motherboard capacitors
+
+Deffective memory:
+Use 'Memtest86+' to check ram sticks.
+Find THE deffective ram stick by testing each one individually.
+If you had a faulty ram stick, wipe the hard-disk and reinstall the server.
+Check motherboard capacitors, as symptoms are often similarly confusing.
