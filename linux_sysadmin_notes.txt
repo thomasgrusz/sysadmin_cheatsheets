@@ -346,6 +346,8 @@ sudo -i -u carol                                start login shell as user carol
 sudo -s -u carol                                start non-login shell as user carol
 sudo -u carol whoami                            run command 'whoami` as user carol
 
+grep -Po '^sudo.*:\K.*$' /etc/group             list all members of the sudo group
+
 sudo visudo                                     edit sudoers list
 /etc/sudoers:
 %sudo ALL=(ALL:ALL) ALL                         the sudo group can execute all commands on all hostas as all users and groups, HOSTS=(USERS:GROUPS) CMDs
@@ -2412,7 +2414,7 @@ Check for:
 - website availability
 - user checks if number > 1
 
-Business contiuity plan
+Business continuity plan
 -----------------------
 - what is the plan to follow after an incident
 - how much time is estimated to have everything back up and runnign
@@ -2498,3 +2500,74 @@ Use 'Memtest86+' to check ram sticks.
 Find THE deffective ram stick by testing each one individually.
 If you had a faulty ram stick, wipe the hard-disk and reinstall the server.
 Check motherboard capacitors, as symptoms are often similarly confusing.
+
+
+Preventing disasters
+===================
+- approved list of hardware
+- rules for users
+- guidelines ensuring
+    - physical safety (locked server room)
+    - software security
+        - principle of least privilege
+        - system groups with as needed permissions
+        - read-only network shares by default
+        - automatic security patch management
+        - failure monitors (nagios)
+        - firewalls
+        - locked down OpenSSH
+    - user management
+    - server management
+    - application installations
+    - procedure documents
+    - training for end users
+    - method  change control
+
+Git for configuration management
+--------------------------------
+Here we set up a git server with an 'apache2' repo for an ubuntu client server to download from.
+Git server:
+    Create a git server by simply installing git.
+    sudo apt install git
+    sudo mkdir /git
+    sudo chown thomasgrusz:thomasgrusz /git
+    cd /git
+    git init --bare apache2
+
+Client Ubuntu server:
+    sudo mkdir /git
+    sudo chown thomasgrusz:thomasgrusz /git
+    cd /git
+    git clone debianserver01:/git/apache2
+    sudo cp -rp /etc/apache2 /etc/apache.bak        # -p preserves permissions,modes, ownership
+    cp -rp /etc/apache2/* /git/apache2              # cave: non-world-readable files will not be copies, e.g. 'certs/mysite.key`
+    sudo rm -rf /etc/apache2 
+    sudo ln -s /git/apache2 /etc/apache2
+    cd apache2
+    git add .
+    git commit -m "Initial commit, add apache2 config files"
+    git push origin master
+     
+In case our ubuntu server needs to be set up freshly, we can just clone the apache2 config file from the git server and create a symlink to /etc/apache2.
+The owner:group will not be root:root, but thomasgrusz:thomasgrusz.
+If you want the files to be owned by root (but not the .git folder), then cd into the apache2 folder and run:
+    sudo chown -R root:root *
+The '*` will be expanded to all VISIBLE files, i.e. not the hidden .git folder, which will stay owned by thomasgrusz.
+
+Backup plan
+-----------
+Having a backup plan is very important for a sysadmin.
+If you have a physical server lying around, create a secondary server of a mission critial server.
+Avoid single points of failure.
+If this not possible, take regular snapshots of the databse servers' storage volumes or dump backups on external drives.
+Have at least 3 backups of important servers at various places, one of them offsite (e.g. cloud).
+Use 'rsync` for differential backups, also over the internet.
+
+CURDATE=$(date +%m-%d-%Y)
+export CURDATE
+sudo rsync -avb --delete --backup-dir=/backup/incremental/$CURDATE /src /target
+
+With external backup drives we can create three folder:
+- current               where the current backup is stored by rsync
+- archive               where the --backup-dir option of rsync is storing incremental backups
+- logs                  where the standard output/error of rsync is redirected to, using $CURDATE as part of the filename
