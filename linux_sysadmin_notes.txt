@@ -335,26 +335,38 @@ exec bash                                       replace the current shell with a
 
 User Management
 ===============
-[sudo] su -                                     switch to root in login shell
-[sudo] su carol                                 switch to user carol in a non-login shell
-[sudo] su - carol                               switch to carol in login shell
+[sudo] su -                                             switch to root in login shell
+[sudo] su carol                                         switch to user carol in a non-login shell
+[sudo] su - carol                                       switch to carol in login shell
 
-sudo -i                                         start a root login shell
-sudo -i /home/user/script.sh                    run script as root in login shell        
-sudo -s                                         start a root non-login shell
-sudo -i -u carol                                start login shell as user carol
-sudo -s -u carol                                start non-login shell as user carol
-sudo -u carol whoami                            run command 'whoami` as user carol
+sudo -i                                                 start a root login shell
+sudo -i /home/user/script.sh                            run script as root in login shell        
+sudo -s                                                 start a root non-login shell
+sudo -i -u carol                                        start login shell as user carol
+sudo -s -u carol                                        start non-login shell as user carol
+sudo -u carol whoami                                    run command 'whoami` as user carol
 
-grep -Po '^sudo.*:\K.*$' /etc/group             list all members of the sudo group
+sudo cat /etc/shadow | awk -F: '($2==""){print $1}'     list users with empty passwords 
+sudo vipw                                               edit /etc/passwd safely
+sudo vipw -s                                            edit /etc/shadow safely
 
-sudo visudo                                     edit sudoers list
+grep -Po '^sudo.*:\K.*$' /etc/group                     list all members of the sudo group
+sudo visudo                                             edit sudoers list
 /etc/sudoers:
-%sudo ALL=(ALL:ALL) ALL                         the sudo group can execute all commands on all hostas as all users and groups, HOSTS=(USERS:GROUPS) CMDs
-caro All= NOPASSWD: /usr/bin/systemctl restart apache2      carol can restart the apache2 webserver without password on all hosts
+%sudo ALL=(ALL:ALL) ALL                                 the sudo group can execute all commands on all hostas as all users and groups, HOSTS=(USERS:GROUPS) CMDs
+caro All= NOPASSWD: /usr/bin/systemctl restart apache2  carol can restart the apache2 webserver without password on all hosts
 
 Prevent login by any user by creating the file '/etc/nologin`. The file may contain a message to users.
 
+set password policy with pam module (cave: almost keep a root shell open!!!):
+sudo apt install libpam-cracklib                                    # or libpam-pwquality (/etc/security/pwquality.conf)
+vim /etc/pam.d/common-password:
+password    required    pam_pwhistory.so remember=99 use_authok     # password is required and 99 are remembered and therefore cannot be reused
+difok=3                                                             # at least 3 characters have to different in the new pw
+obscure                                                             # prevents simple pw
+
+test your pam policy and make sure your users and admins can access the server!
+make sure to increase security, but not frustrate your users -> postit on screen!
 
 umask                                           list default permission mask
 umask -S                                        list default perms in symbolic mode
@@ -822,6 +834,24 @@ nmap command
 nmap -p ssh,80 localhost 192.168.50.100-200     scan ports 22 and 80 on localhost and a range of hosts
 
 
+IPV6
+====
+Disable IPv6 if not used:
+Add the following lines at the end of /etc/sysctl.conf:
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+
+Apply the changes:
+sudo sysctl -p
+
+Check if IPv6 is turned off, must be '1`:
+cat /proc/sys/net/ipv6/conf/all/diable_ipv6
+
+If you also want to disable IPv6 for ssh connections change the following line in /etc/ssh/sshd_config and restart the ssh daemon:
+AddressFamily inet
+
+
 dhclient
 ========
 sudo dhclient -v -r                             release DHCP-leased IP address
@@ -1038,25 +1068,106 @@ GPG and Encryption
 ~/.gnupg/openpgp-revocs.d/                      folder for revocation certificates
 ~/.gnupg/trustdb.gpg                            'web of trust`
 
-gpg --list-keys                                 view private keys
-gpg --fingerprint carol                         view fingerprint of pub.key
+Generating Keys
+---------------
+By default GPG creates 1 primary key for authenticatoin/signing and 1 subkey for encryption/decryption.
+gpg --quick-gen-key thomasgrusz@localhost       generate standard keys with one user ID (simple command)
+gpg --gen-key                                   generate keypair with curren default parameters
+gpg --full-generate-key                         same with more flexibility (extended version of gen-key)
 
-gpg --gen-key                                   generate keypair
+List public keys
+----------------
+gpg --list-public-keys                          view all public keys' metadata and the fingerprint for primary pub key (-k)
+gpg --fingerprint --fingerprint                 view ALL public keys fingerprints (primary AND subkeys)
+gpg --list-private-keys                         view private keys (same as --list-public-keys as I have both priv/publ pair, different if have only public key of pair) 
+
+List key-IDs
+------------
+Key IDs are essentially abbreviations of fingerprints (short: last 8 characters of fingerprint, long: last 16 characters)
+gpg --list-public-keys --keyid-format short|long
+
+Encrypting a message
+--------------------
+The default encryption is binary. The following encrypts <file> using the public key of 'userID' creating <file.gpg>:
+gpg --encrypt --recipient 'userID' <file>
+ 
+If you want to paste your message in an email, you need to supply an ASCII "armor". This creates an encrypted <file.asc> using carol's public key.
+gpg --encrypt --armor --recipient carol <file>
+
+You can specify the filename of the encrypted file using the '--output' option.
+
+Decrypting a message
+--------------------
+gpg --decrypt <encrypted-file>                  decrypt the file to STDOUT (you have to supply the passphrase)
+gpg --output decfile.txt --decrypt enfile.txt   decrypt enfile.txt and save as decfile.txt
+
+Sign a file
+-----------
+gpg --sign <file>                               sign <file> using private key (file is also compressed and converted into binary), NOT ENCRYPTED, but encoded with private key
+gpg --clear-sign <file>                         create a readable, but signed message
+gpg --detach-sign <file>                        create a detached signature of <file> (used for video, audio, code files, that should not be altered by signing)
+gpg --armor --detach-sign <file>                create an ASCII encoded detached signature of <file>
+
+Verify a signed file
+--------------------
+gpg --verify <signed-file>                      verifies signature of file (you have to have the public key of the signee), but you won't see the contents, unless it is 'clear-signed'
+gpg --decrypt <signed-file>                     decrypts AND verifies the signature
+gpg --verify <detached-sig> <corr_content>      verifies the detached signature of a file
+
+
+Exportin a PUBLIC key
+---------------------
 gpg --export carol                              view carol's pub.key (stdout)
 gpg --export > carol.pub.key                    save carol's pub.key to file 
 gpg --export --armor > carol.pub.key            save carol's pub.key with ASCII armor to file (save for emailing) 
-scp carol.pub.key ina@host:/home/ina/           send carol's pubkey to ina, so she can decrypt messages from carol
+scp carol.pub.key ina@host:/home/ina/           send carol's pubkey to ina, so she can encrypt messages for carol, or check files signed by carol
 
+Importing a PUBLIC key
+----------------------
+gpg --import carol.pub.key                      for Ina to encrypt messages to carol, she needs to import carol's pub.key, that she received via scp or email
+
+Deleting a key
+--------------
+gpg --delete-key <key ID>
+
+Revoking a key
+--------------
 gpg --gen-revoke carol > revocation_file.asc    create key revocation file in ASCII, to render key unusable
 gpg --import revocation_file.asc                to deactivate the private key, merge the revocation file by importing it
 
-gpg --import carol.pub.key                                                                  for Ina to decrypt messages to carol, she needs to import carol's pub.key, that she received via scp or email
-gpg --output encrypted_message.asc --recipient thomas --armor --encrypt message.txt         encrypt message file 'm.txt` using thomas' pub.key and ASCII armor
-gpg --output decrypted_msg.txt --decrypt encrypted_message.asc                              carol can now decrypt Ina's message, after having received it via scp (or email)
+Search for a Public key on a Keyserver
+--------------------------------------
+gpg --keyserver 'pgp.mit.edu' --serach-keys 'Anton Paras'
 
-gpg --output message.sig --sign message         sign message using private key (file is also compressed and converted into binay)
-gpg --verify message.sig                        verify the signature of the file
-gpg --output message --decrypt message.sig      to read the signed file, it needs to be decrypted
+Major key registries, being part of the SKS Pool:
+pgp.mit.edu
+keyserver.ubuntu.com
+keyserver.pgp.com
+
+Importing a Public Key from a Keyserver
+---------------------------------------
+gpg --keyserver --receive-keys <key ID>
+
+Sending a Public Key to a Keyserver
+-----------------------------------
+gpg --keyserer keyserver.ubuntu.com --send-keys <key ID>
+
+Refreshing Keys
+---------------
+gpg --keyserver keyserver.pgp.com --refresh-keys
+
+Setting a Default Keyserver
+---------------------------
+~/.gunpg/gpg.conf:
+keyserver pgp.mit.edu
+
+If you have a default keyserver you can ommit the '--keyserver' flag
+
+Signing other's Public Key (Web of Trust)
+-----------------------------------------
+If you get a public key from someone and know 100% that this key is truely from this person, you can sign it and return it of upload it to a key repo.
+
+gpg --sign-key <key ID>
 
 gpg-agent --help                                show help for gpg agent
 
@@ -2571,3 +2682,9 @@ With external backup drives we can create three folder:
 - current               where the current backup is stored by rsync
 - archive               where the --backup-dir option of rsync is storing incremental backups
 - logs                  where the standard output/error of rsync is redirected to, using $CURDATE as part of the filename
+
+
+Create secure password on command line
+======================================
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 10
+cat /dev/urandom | tr -dc 'a-zA-Z0-9-_!@#$%^&*()_+{}|:<>?=' | fold -w 10 | grep -i '[!@#$%^&*()_+{}|:<>?=]' | head -n 1
