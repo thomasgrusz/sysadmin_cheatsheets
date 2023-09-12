@@ -165,7 +165,10 @@ git switch BRANCH               switch to BRANCH; if BRANCH is a remote one, it 
 git switch -c BRANCH            create new BRANCH and switch to it
 git checkout BRANCH             the same as switch
 git checkout -b BRANCH          the same as switch -c
-git checkout -C BRANCH <start>  move branch pointer of existing branch to <start>   
+git checkout -C BRANCH <start>  move branch pointer of existing branch to <start>
+
+git subtree split --prefix=dist -b publish_on_github_branch		create/update new branch from one folder "dist"
+
 
 Tags
 ----
