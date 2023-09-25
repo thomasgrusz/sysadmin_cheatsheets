@@ -40,8 +40,8 @@ Aliases
 ------
 git config —-global alias.a “commit -a -m”
 git config —-global alias.ac ‘!git add -A && git commit -m’
-alias.l=log --oneline
-alias.ll=log --oneline --all --graph
+git config --global alias.l=log --oneline
+git config --global alias.ll=log --oneline --all --graph
 git config --global alias.s "status"
 git config --global alias.b "branch"
 
@@ -165,10 +165,9 @@ git switch BRANCH               switch to BRANCH; if BRANCH is a remote one, it 
 git switch -c BRANCH            create new BRANCH and switch to it
 git checkout BRANCH             the same as switch
 git checkout -b BRANCH          the same as switch -c
-git checkout -C BRANCH <start>  move branch pointer of existing branch to <start>
+git checkout -C BRANCH <start>  move branch pointer of existing branch to <start>   
 
 git subtree split --prefix=dist -b publish_on_github_branch		create/update new branch from one folder "dist"
-
 
 Tags
 ----
