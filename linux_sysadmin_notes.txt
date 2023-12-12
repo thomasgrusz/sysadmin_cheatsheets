@@ -1,4 +1,4 @@
-*************************************
+F*************************************
 Linux Notes for System Administrators
 *************************************
 
@@ -738,6 +738,27 @@ sudo apt update
 sudo apt install -t bookworm-backports <package-name>
 
 
+Add Ubuntu repo to Debian
+-------------------------
+deb http://archive.ubuntu.com/ubuntu/ jammy universe  >  /etc/apt/sources.list
+sudo apt update		(get <PUBKEY> number from error message
+sudo gpg --keryserver pgpkeys.mit.edu --recv-key <PUBKEY>
+sudo gpg -a --export <PUBKEY> | sudo tee /etc/apt/trusted.gpg.d/ubuntu_universak_key.asc
+sudo apt update
+
+To prevent the ubuntu repo from overwriting the same packages as in the debian repos set a lower priority.
+Check the priorities of the repos:
+apt-cache policy
+
+/etc/apt/preferences.d/99ubuntu:
+# Never prefer packages from the ubuntu repos
+Package: *
+Pin: release o=Ubuntu
+Pin-Priority: 1
+
+Check again: apt-cache policy
+
+
 Patch Management
 ================
 Schedule patches, once weekly is a good compromise between bandwith waste and security (search and install)
@@ -1115,7 +1136,7 @@ gpg --decrypt <signed-file>                     decrypts AND verifies the signat
 gpg --verify <detached-sig> <corr_content>      verifies the detached signature of a file
 
 
-Exportin a PUBLIC key
+Exporting a PUBLIC key
 ---------------------
 gpg --export carol                              view carol's pub.key (stdout)
 gpg --export > carol.pub.key                    save carol's pub.key to file 
