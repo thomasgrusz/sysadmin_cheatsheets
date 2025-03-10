@@ -1,4 +1,4 @@
-F*************************************
+*************************************
 Linux Notes for System Administrators
 *************************************
 
@@ -16,7 +16,7 @@ S       toggle cummulative time (with dead children) and separate time for tasks
 k       kill process
 r       renice process
 
-f       choose/move fields -> s sort by field  
+f       choose/move fields -> s sort by field
 u       filter by username
 O       filter by CRITERIA=something
 ^o      show all applied filters (ctrl-o)
@@ -86,7 +86,7 @@ ps -U 0                                         show all effective root user pro
 ps - C sleep                                    show all processes running a command in the list
 ps -t tty1,tty2                                 show processes on ttys on list
 ps m                                            show threads and processes
-ps -l                                           show long format, including PRI,NI 
+ps -l                                           show long format, including PRI,NI
 ps -eo pid,pri,ni,command                       show custom output for all processes
 ps o pid,min_flt,maj_flt,command                show min and major page faults
 
@@ -212,7 +212,7 @@ locale -a                                       list all available locales
 locale -k LC_TIME                               list details about the TC_TIME locale setting
 localectl status                                display locale status
 localectl set-locale en_US.UTF-8                set locale (LANG) to US English
-localectl set-locale LC_TIME=de_CH.UTF-8        set time format to Swiss German 
+localectl set-locale LC_TIME=de_CH.UTF-8        set time format to Swiss German
 update-locale LC_TIME LANG=en_US.UTF-8          set locale to US English and clear LC_TIME (Ubuntu only)
 /etc/locale.gen                                 contains list of locales that can be built, uncomment to choose
 locale-gen                                      run command to build chosen locales
@@ -226,7 +226,7 @@ crontab -l                                      list user crontab
 /etc/crontab                                    system crontab file
 /etc/cron.allow                                 whitelist users for cronjobs
 /etc/cron.deny                                  blacklist users
-at 22:30                                        one time timer 
+at 22:30                                        one time timer
 at now + 5 minutes
 at 16:00 + 3 days
 /etc/at.allow                                   whitelist users for at
@@ -260,7 +260,7 @@ journalctl -S '2023-04-01 14:00:00'             since <timepoint>
 journalctl -p err                               priority emerg - error
 journalctl -p 3                                 priority 0-3 (emerg - error)
 journalctl -p 2..3                              priority 2-3 (alert - crit)
-journalctl -g 'kernel.*memory'                  regex 
+journalctl -g 'kernel.*memory'                  regex
 journalctl PRIORITY=3 SYSLOG_FACILITY=0         show all user-level error logs
 man systemd.journal-fields                      show all possible journal fields
 journalctl -D /media/...                        access log on another disk
@@ -281,7 +281,7 @@ central log server
 /etc/rsyslog.d/remote.conf:                     create configuration file for remote log server
 $ModLoad imtcp.so                                                                               #load module
 $InputTCPServerRun 514                                                                          #start TCP server on port
-$template RemoteLogs,"/var/log/remotehosts/%HOSTNAME%/%$NOW%.%syslogseverity-text%.log"         #define logging remplate 
+$template RemoteLogs,"/var/log/remotehosts/%HOSTNAME%/%$NOW%.%syslogseverity-text%.log"         #define logging remplate
 if $FROMHOST-IP=='192.168.50.100' then ?RemoteLogs                                              #filter condition
 & stop                                                                                          #stop logging also to default /var/log/messages
 
@@ -294,7 +294,7 @@ logrotate
 /etc/logrotate.conf                             default configs for rotating logs, daily cronjob -> /etc/cron.daily/logrotate
 /etc/logrotate.d/*                              file configs taking precedence
 journalctl --disk-usage                         check file size of logs (max default size = 10% of filesystem, max 4GiB)
-/etc/systemd/journald.conf:                     
+/etc/systemd/journald.conf:
 SystemMaxUse=500M                               limit log diskspace to 500MB (default: 10% of filesystem, max 4GiB)
 SystemKeepFree=500M                             disk space to be left free for others (default: 15% of fs, max 4GiB)
 SystemMaxFileSize=8M                            limit logfile size to 8Mebibytes
@@ -340,13 +340,13 @@ User Management
 [sudo] su - carol                                       switch to carol in login shell
 
 sudo -i                                                 start a root login shell
-sudo -i /home/user/script.sh                            run script as root in login shell        
+sudo -i /home/user/script.sh                            run script as root in login shell
 sudo -s                                                 start a root non-login shell
 sudo -i -u carol                                        start login shell as user carol
 sudo -s -u carol                                        start non-login shell as user carol
 sudo -u carol whoami                                    run command 'whoami` as user carol
 
-sudo cat /etc/shadow | awk -F: '($2==""){print $1}'     list users with empty passwords 
+sudo cat /etc/shadow | awk -F: '($2==""){print $1}'     list users with empty passwords
 sudo vipw                                               edit /etc/passwd safely
 sudo vipw -s                                            edit /etc/shadow safely
 
@@ -467,8 +467,8 @@ set -x                                          print commands and arguments as 
 
 shop
 =====
-shopt -s nocasematch                            enable case insensitivity for 'case construct` 
-shopt -u nocasematch                            disable case insensitivity for 'case construct` 
+shopt -s nocasematch                            enable case insensitivity for 'case construct`
+shopt -u nocasematch                            disable case insensitivity for 'case construct`
 
 
 sed
@@ -520,7 +520,7 @@ tar -zxf archive.tar.gz                         extract a gzipped tarball
 tar -jcf archive.tar.bz2 text?.txt              create bzip2 compressed tarball
 tar -jxf archive.tar.bz2                        extract a bzipped2 tarball
 
-tar -Jcf archive.tar.xz text?.txt               create a xz compressed tarball 
+tar -Jcf archive.tar.xz text?.txt               create a xz compressed tarball
 tar -Jxf archive.tar.xz text?.txt               extract a xz compressed tarball
 
 dd in=/dev/sda of=/dev/sdb status=progress      copy entire disk
@@ -567,7 +567,7 @@ MUAs: mail
 ----
 ls /etc/ssh/ | mail -s "ssh config dir" root                                    send mail to root with folder contents
 mail -s "subject" alice@ubuntuserver100 <<< "My Message"                        send email using MUA 'mail`
-echo "My Message" | mail -s "subject" alice@ubuntuserver100                     send email 
+echo "My Message" | mail -s "subject" alice@ubuntuserver100                     send email
 echo "Pls ack reception of attachment" | mail -a /var/log/mail.log root         send attachment and body text to root (not working with all variants of 'mail`
 
 /etc/aliases:                                                                   config file for mail aliases
@@ -576,7 +576,7 @@ sudo newaliases
 echo "Testmessage" | mail -s "postmaster-test" postmaster@ubuntuserver100       send mail to alice and thomasgrusz
 
 /home/alice/.foward:                                                            forward all mail for alice to carol (perm: 600 !!)
-carol   
+carol
 
 
 Printing (CUPS)
@@ -684,12 +684,12 @@ RHEL-Clones
 dnf download <package-name>                     download a package without installing it
 dnf install <package-name>                      download and install a package
 dnf remove <package-name>                       remove a package
-rpm -i zsh-5.5.1-10.el8.x86_64.rpm              install a package 
+rpm -i zsh-5.5.1-10.el8.x86_64.rpm              install a package
 rpm -Uvh zsh-5.5.1-10.el8.x86_64.rpm            update or install a package with progressbar (#) and verbose
-rpm -e zsh-5.5.1-10.el8.x86_64.rpm              remove a package 
+rpm -e zsh-5.5.1-10.el8.x86_64.rpm              remove a package
 rpm -q zsh                                      query if package is installed
-rpm -qi zsh                                     list detailed info 
-rpm -qc zsh                                     list config files 
+rpm -qi zsh                                     list detailed info
+rpm -qc zsh                                     list config files
 rpm -qR zsh                                     list dependencies
 rpm -q --whatprovides zsh                       show what package file belongs to
 rpm -qa                                         list all installed packages
@@ -700,7 +700,7 @@ dpkg -I zsh_5.8.1-1_amd64.deb                   get info on uninstalled package
 dpkg -c zsh_5.8.1-1_amd64.deb                   show contents of uninstalled package file
 dpkg --get-selections                           list all installed packages
 dpkg -l                                         list all installed packages
-dpkg -i zsh_5.8.1-1_amd64.deb                   install or update a package 
+dpkg -i zsh_5.8.1-1_amd64.deb                   install or update a package
 dpkg -r zsh                                     remove package
 dpkg -P zsh                                     remove package and config files (Purge)
 dpkg -s zsh                                     show info about installed package, incl. status
@@ -771,7 +771,7 @@ Prepare for buggy updates:
     - If you are able to figure out which patch is causing your issues, you can try uninstalling the specific software package and installing a fresh copy.
 Run significatn updates after business hours or during weekends and be available before going live. Business continuity.
 Read through the release notes before applying patches.
-Consider virtualization -> easier 
+Consider virtualization -> easier
 
 
 Shared Libraries
@@ -917,7 +917,7 @@ sudo lspci -k                                   show hardware connected to PCI i
 sudo lspci -vs 02:00                            show verbose info on hardware in slot 02:00
 sudo lsmod | grep wl                            show loaded driver and dependents
 modinfo wl                                      show driver info, including parameters
-modinfo -p wl                                   show driver parameters only 
+modinfo -p wl                                   show driver parameters only
 
 MacAir Antix Base Wifi Adapter Drivers:
 Kernel driver in use: wl
@@ -1026,7 +1026,7 @@ sudo du -hsc /* 2>/dev/null                     list root folders with size plus
 du -a                                           du for all files and folders (incl. subfolders)
 ncdu                                            du with text GUI using curses
 ncdu -x /                                       TUI list root folders without mounted FS - useful ***
- 
+
 
 SSH
 ===
@@ -1100,7 +1100,7 @@ List public keys
 ----------------
 gpg --list-public-keys                          view all public keys' metadata and the fingerprint for primary pub key (-k)
 gpg --fingerprint --fingerprint                 view ALL public keys fingerprints (primary AND subkeys)
-gpg --list-private-keys                         view private keys (same as --list-public-keys as I have both priv/publ pair, different if have only public key of pair) 
+gpg --list-private-keys                         view private keys (same as --list-public-keys as I have both priv/publ pair, different if have only public key of pair)
 
 List key-IDs
 ------------
@@ -1111,7 +1111,7 @@ Encrypting a message
 --------------------
 The default encryption is binary. The following encrypts <file> using the public key of 'userID' creating <file.gpg>:
 gpg --encrypt --recipient 'userID' <file>
- 
+
 If you want to paste your message in an email, you need to supply an ASCII "armor". This creates an encrypted <file.asc> using carol's public key.
 gpg --encrypt --armor --recipient carol <file>
 
@@ -1139,8 +1139,8 @@ gpg --verify <detached-sig> <corr_content>      verifies the detached signature 
 Exporting a PUBLIC key
 ---------------------
 gpg --export carol                              view carol's pub.key (stdout)
-gpg --export > carol.pub.key                    save carol's pub.key to file 
-gpg --export --armor > carol.pub.key            save carol's pub.key with ASCII armor to file (save for emailing) 
+gpg --export > carol.pub.key                    save carol's pub.key to file
+gpg --export --armor > carol.pub.key            save carol's pub.key with ASCII armor to file (save for emailing)
 scp carol.pub.key ina@host:/home/ina/           send carol's pubkey to ina, so she can encrypt messages for carol, or check files signed by carol
 
 Importing a PUBLIC key
@@ -1236,7 +1236,7 @@ Secure the Grub2 bootloader with a password (http://daniel-lange.com/archives/75
 grub-mkpasswd-pbkdf2 <password to be hashed>
 
 Add in '/etc/grub.d/40_custom':
-set superusers="thomasgrusz root" 
+set superusers="thomasgrusz root"
 password_pbkdf2 thomasgrusz grub.pbkdf2.sha512.10000.aaa...(the hashed passwd)
 password_pbkdf2 root ...
 
@@ -1274,7 +1274,7 @@ sudo bash VentoyDisk2Disk -su /dev/sd?
 
 cloud-init
 ==========
-disable cloud-init:                             sudo touch /etc/cloud/cloud-init.disabled                                   
+disable cloud-init:                             sudo touch /etc/cloud/cloud-init.disabled
 
 
 Bash Scripting
@@ -2090,9 +2090,9 @@ KVM
 /etc/libvirt/qemu                                   folder for XML VM files
 /etc/machine-id                                     D-bus ID often linked to /var/lib/dbus/machine-id
 dbus-uuidgen --ensure                               check that there is a machine-id
-dbus-uuidgen --ensure=/etc/machine-id               create a new machine-id (delete old file first) 
+dbus-uuidgen --ensure=/etc/machine-id               create a new machine-id (delete old file first)
 dbus-uuidgen --get                                  show machine-id
-grep --color -E 'vmx|svm' /proc/cpuinfo             verify if CPU extensions are enabled for INTEL/AMD 
+grep --color -E 'vmx|svm' /proc/cpuinfo             verify if CPU extensions are enabled for INTEL/AMD
 sudo apt install virt-manager                       GUI tool for libvirt KVM virtual machines
 virt-install                                        CLI installation command for a KVM virtual machine
 
@@ -2380,7 +2380,7 @@ Unattended upgrades
 sudo apt install unattended-upgrades
 systemctl status unattended-upgrades.service
 
-To activate unattended-upgrades, you need to ensure that the apt configuration stub /etc/apt/apt.conf.d/20auto-upgrades contains at least the following lines: 
+To activate unattended-upgrades, you need to ensure that the apt configuration stub /etc/apt/apt.conf.d/20auto-upgrades contains at least the following lines:
     APT::Periodic::Update-Package-Lists "1";
     APT::Periodic::Unattended-Upgrade "1";
 Another way to do the same thing is to run the following command:
@@ -2572,7 +2572,7 @@ Root cause analysis
 - date/time issue was noticed
 - findings
 - what has been done to fix the issue
-- what events, configurations or faults caused the isssue? 
+- what events, configurations or faults caused the isssue?
 
 View system logs
 ----------------
@@ -2673,13 +2673,13 @@ Client Ubuntu server:
     git clone debianserver01:/git/apache2
     sudo cp -rp /etc/apache2 /etc/apache.bak        # -p preserves permissions,modes, ownership
     cp -rp /etc/apache2/* /git/apache2              # cave: non-world-readable files will not be copies, e.g. 'certs/mysite.key`
-    sudo rm -rf /etc/apache2 
+    sudo rm -rf /etc/apache2
     sudo ln -s /git/apache2 /etc/apache2
     cd apache2
     git add .
     git commit -m "Initial commit, add apache2 config files"
     git push origin master
-     
+
 In case our ubuntu server needs to be set up freshly, we can just clone the apache2 config file from the git server and create a symlink to /etc/apache2.
 The owner:group will not be root:root, but thomasgrusz:thomasgrusz.
 If you want the files to be owned by root (but not the .git folder), then cd into the apache2 folder and run:
