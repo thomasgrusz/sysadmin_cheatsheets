@@ -33,8 +33,9 @@ Create an ssh key pair and copy the content of the public key to github:
 
 ```
 git config --list --show-origin
+
 git config --global user.name Thomas Grusz
-git config --global user.email thomas.grusz@gmail.com
+git config --global user.email thomas.grusz@protonmail.com
 git config --global core.editor vim
 git config --global init.defaultBranch main
 git config --global color.status auto
@@ -46,12 +47,12 @@ git config --global color.diff auto
 ## Aliases
 
 ```
-git config —-global alias.a “commit -a -m”
+git config —-global alias.a 'commit -a -m'
 git config —-global alias.ac ‘!git add -A && git commit -m’
-git config --global alias.l=log --oneline -n 5
-git config --global alias.ll=log --oneline --all --graph
-git config --global alias.s "status"
-git config --global alias.b "branch"
+git config --global alias.l='log --oneline -n 5'
+git config --global alias.ll='log --oneline --all --graph'
+git config --global alias.s 'status'
+git config --global alias.b 'branch'
 ```
 
 Alias for pruning and deleting dead upstream branches:
@@ -71,7 +72,7 @@ git remote rename ORIGIN SOURCE
 git remote show ORIGIN
 ```
 
-When using SSH to push to github, make sure the SSH protocol is defined for exchange with the remote repo.
+When using SSH to push to github, make sure 'SSH' is the protocol defined for exchange with the remote repo.
 Check with: `git remote -v`
 
 The output should be:
@@ -187,10 +188,10 @@ git commit -m “Message”
 git commit -m "Message" --dry-run
 
 git commit -a -m “Message”
-#add modified and deleted files & commit, untracked files are not affected
+# add modified and deleted files & commit, untracked files are not affected
 
 git commit --amend
-#change last commit message (via editor)
+# change last commit message (via editor)
 ```
 
 ```
@@ -292,10 +293,10 @@ git bisect good REPEAT until narrowed down to the exact commit that causes the b
 ## More detailed explanations
 
 git reset
-sets the branch pointer to a commit, that HEAD also points tothe "--mixed" switch is the default, leaving the working directory intact, just restoring the indexthe "--soft" switch leaves the working directory AND the index intact the "--hard" switch sets the working tree, index and branch pointer to HEAD or a specified commit
+sets the branch pointer to a commit, that HEAD also points to the "--mixed" switch is the default, leaving the working directory intact, just restoring the index the "--soft" switch leaves the working directory AND the index intact the "--hard" switch sets the working tree, index and branch pointer to HEAD or a specified commit
 
 git checkout
-sets the HEAD pointer to a commit (HEAD is the default if "git checkout" is ran without arguments, i.e. checks out a branchor creates a new branch with the "-b" switchor copies the index to the working tree if used with a pathor copies HEAD to working directory AND index if used like this "git checkout HEAD -- file"
+sets the HEAD pointer to a commit (HEAD is the default if "git checkout" is ran without arguments, i.e. checks out a branch or creates a new branch with the "-b" switch or copies the index to the working tree if used with a path or copies HEAD to working directory AND index if used like this "git checkout HEAD -- file"
 
 git restore file
 sets the working-tree to the indexif combined with the --staged switch (-S), the index is restored from HEADif both the --staged (-S) and the --worktree (-W) switches are used there needs to be a source, i.e. --source HEAD (default) to restore both index and working-tree
