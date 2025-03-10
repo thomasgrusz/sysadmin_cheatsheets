@@ -17,29 +17,29 @@ commands:
 :scriptnames                            list sourced config files and vim scripts
 :set runtimepath?                       list all folders vim looks for config files in
 
-/																				search forward
-?																				search backwards
-/\V.																		search for literal dot '.' with magic mode disabled (\V)
-/\.	  																	search for literal dot . (escaped)
-/\<i																		search words beginning with 'i'
+/                                       search forward
+?                                       search backwards
+/\V.                                    search for literal dot '.' with magic mode disabled (\V)
+/\.                                     search for literal dot . (escaped)
+/\<i                                    search words beginning with 'i'
 :%s/old/new/g                           global text replacement
 :s/old/new/g                            text replacement on current line
 :10,15s/old/new/g                       text replacement on lines 10-15 inclusive
 :10,$s/old/new/gc                       text replacement on lines 10-end with confirmation
-:/SEARCHTERM/e+2												search end of searchterm plus 2 characters
-:/SEARCHTERM/b+2												search beginning of searchterm plus 2 characters
-:/SEARCHTERM/+2													search searchterm plus 2 lines down
-:/SEARCHTERM/-2													search searchterm plus 2 lines up
+:/SEARCHTERM/e+2                        search end of searchterm plus 2 characters
+:/SEARCHTERM/b+2                        search beginning of searchterm plus 2 characters
+:/SEARCHTERM/+2                         search searchterm plus 2 lines down
+:/SEARCHTERM/-2                         search searchterm plus 2 lines up
 
-*																				search for word under cursor
-#																				search backwards for word under cursor
+*                                       search for word under cursor
+#                                       search backwards for word under cursor
 
-!ctags -R FOLDER												create tags for a folder in terminal
-:tag ex_echo														go to tag in FOLDER/file, i.e. function 'ex_echo'
-<ctrl-x]>	SOMETHING-TAGGED							context menu of existing tags starting w SOMETHING
-<ctrl-xf> FILENAME											get list of files
-gf																			go to file under cursor (back: <ctrl-o>)
-<ctrl-w>f																open file under cursor in new window
+!ctags -R FOLDER                        create tags for a folder in terminal
+:tag ex_echo                            go to tag in FOLDER/file, i.e. function 'ex_echo'
+<ctrl-x]> SOMETHING-TAGGED              context menu of existing tags starting w SOMETHING
+<ctrl-xf> FILENAME                      get list of files
+gf                                      go to file under cursor (back: <ctrl-o>)
+<ctrl-w>f                               open file under cursor in new window
 
 :e <file>                               open file in new buffer (in same window)
 :enew                                   open empty new buffer
@@ -48,10 +48,10 @@ gf																			go to file under cursor (back: <ctrl-o>)
 :new                                    open a new, empty buffer in a new window
 :below new                              open a new, empty buffer in a new window below
 :new <file>                             open file in a new window above
-:on																			close all windows except active one
-:r																			readi in file
-:view																		open file READONLY
-:%d																			delete all lines
+:on                                     close all windows except active one
+:r                                      readi in file
+:view                                   open file READONLY
+:%d                                     delete all lines
 
 :ls                                     list all buffers
 :bn                                     hop to next buffer
@@ -59,7 +59,7 @@ gf																			go to file under cursor (back: <ctrl-o>)
 :b3                                     go to buffer 3
 :bd                                     delete buffer (close buffer and window)
 :ball                                   load all buffers
-bufdo g/function/d											delete lines containing "function" in all buffers
+bufdo g/function/d                      delete lines containing "function" in all buffers
 
 :tabnew <file>                          open file in a new tab
 :tabn                                   hop to next tab
@@ -67,11 +67,18 @@ bufdo g/function/d											delete lines containing "function" in all buffers
 :tabfirst                               hop to first tab
 :tablast                                hop to last tab
 :tabclose                               closetab
-:tabonly																turn all tabs to buffers except current
-:tab split															move window in its own tab
-:tabmove #															move tab to position # (0-indexed)
-#gt																			go to tab #
-gt																			go to next tab
+:tabonly                                turn all tabs to buffers except current
+:tab split                              move window in its own tab
+:tabmove #                              move tab to position # (0-indexed)
+#gt                                     go to tab #
+gt                                      go to next tab
+
+:retab                                  convert tabs to spaces
+set tabstop=4                           tabs visually appear as 4 spaces
+set shiftwidth=4                        indentation uses 4 spaces
+set softtabstop=4                       tab key inserts 4 spaces
+set expandtab                           convert tabs to spaces
+set smarttab                            use shiftwidth for indentation at line start
 
 wa                                      write all changes to disk
 
@@ -86,11 +93,11 @@ ml                                      set bookmark using letter 'l'
 :[(                                     same for parenthesis
 :])
 
-%																				jump to opposite [ { ( <
+%                                       jump to opposite [ { ( <
 
-zz																			center screen on cursor
-zt																			align top of screen with cursor
-zb																			align bottom of screen with cursor
+zz                                      center screen on cursor
+zt                                      align top of screen with cursor
+zb                                      align bottom of screen with cursor
 
 qa                                      record macro a
 q                                       stop recording
@@ -100,47 +107,47 @@ q                                       stop recording
 "ayy                                    store line-yank in register a
 "ap                                     paste register a
 "%p                                     print current file name
-"/																			last search pattern register
-"_																			black hole register
-"0																			last yank register
-"+																			system clipboard register
-:reg																		view all registers
+"/                                      last search pattern register
+"_                                      black hole register
+"0                                      last yank register
+"+                                      system clipboard register
+:reg                                    view all registers
 
 da"                                     delete surrounding quotes and content
 di"                                     delete word inside quotes
 ca" / ci"                               change instead of delete
 vab                                     mark block within ()
-Vi{																			mark all lines in a curly braces block
-cc																		  change (replace) entire line
-d/.*SEARCHTERM													delete from cursor to SEARCHTERM (not including)
-<ctrl-xl>																autocomplete line based on existing code
-<ctrl-n>																autocomplete word
-<ctrl-n>e																exit autocomplete menu
+Vi{                                     mark all lines in a curly braces block
+cc                                      change (replace) entire line
+d/.*SEARCHTERM                          delete from cursor to SEARCHTERM (not including)
+<ctrl-xl>                               autocomplete line based on existing code
+<ctrl-n>                                autocomplete word
+<ctrl-n>e                               exit autocomplete menu
 
-==																			auto-indent
-~																				switch case
+==                                      auto-indent
+~                                       switch case
 
-za																			toggle fold under cursor
-zo																			open fold under cursor
-zc																			close fold under cursor
-zd																			delete fold under cursor
-zM																			close all folds
-zR																			open all folds
-zj																			move to next fold
-zk																			move to previous fold
-zfat																		zf=fold at=around Tag (set foldmethod=manual)
+za                                      toggle fold under cursor
+zo                                      open fold under cursor
+zc                                      close fold under cursor
+zd                                      delete fold under cursor
+zM                                      close all folds
+zR                                      open all folds
+zj                                      move to next fold
+zk                                      move to previous fold
+zfat                                    zf=fold at=around Tag (set foldmethod=manual)
 
-:term																		open a terminal window
-<ctrl-w>N															  enter normal mode in terminal window
-A																				return to terminal mode
-<ctrl-w>:																enter command mode in terminal
-<ctrl-w>q																put terminal window into background
+:term                                   open a terminal window
+<ctrl-w>N                               enter normal mode in terminal window
+A                                       return to terminal mode
+<ctrl-w>:                               enter command mode in terminal
+<ctrl-w>q                               put terminal window into background
 
 :g/var/d                                g selects regex pattern + command (d=delete)
-:vim[grep] /^top/gjf **/*								search for 'top' at beginning of line in repo
-																				g=global, j=don't jump, f=nogegex
-																				then use 'copen' or 'cw' to chose from results
-:set gp=git\ grep\ -n										use ':grep something' to git grep smth in repo (:cw)
+:vim[grep] /^top/gjf **/*               search for 'top' at beginning of line in repo
+                                        g=global, j=don't jump, f=nogegex
+                                        then use 'copen' or 'cw' to chose from results
+:set gp=git\ grep\ -n                   use ':grep something' to git grep smth in repo (:cw)
 
 q:                                      browse commands history, enter to execute
 
@@ -148,15 +155,15 @@ q:                                      browse commands history, enter to execut
 :syntax off                             get rid of all color highlighting
 :let mapleader = "\\"                   set the <leader> key to \
 
-:ha																			print buffer
+:ha                                     print buffer
 
 In command mode:
-<ctrl-rw>																insert text under cursor
-<ctrl -r>"															insert content of " register (yank)
+<ctrl-rw>                               insert text under cursor
+<ctrl -r>"                              insert content of " register (yank)
 
-:args																		list files in args (the files initially opened together)
-:args srf/*.js													add all javascript files in the src folder to args
-:argdo %s/function/func/g								substitute function with func in all args files
+:args                                   list files in args (the files initially opened together)
+:args srf/*.js                          add all javascript files in the src folder to args
+:argdo %s/function/func/g               substitute function with func in all args files
 
 
 edit remote files:
