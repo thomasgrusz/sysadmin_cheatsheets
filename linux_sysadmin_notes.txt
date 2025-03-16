@@ -434,7 +434,8 @@ find command
 find / -maxdepth 2 -name "*.txt"                find all .txt files 2 levels in from root
 find . -mmin -5                                 find files modified in the last 5 minutes in CWD
 find $HOME -atime 0                             find files accessed in last 24h in home directory
-find / -iname '*report.txt' -ctime 10           find case-insensitive report.txt files which attributes were changed in the last 10 days
+find / -iname '*report.txt' -cmin -10           find case-insensitive report.txt files which attributes were changed in the last 10 minutes
+find / -iname '*report.txt' -ctime -10           find case-insensitive report.txt files which attributes were changed in the last 10 days
 find /usr/bin -perm /4000                       find files with SUID bit set
 find . -perm -664                               find files with owner/group r+w and other read, irrespective of other permissions (e.g. execute bit), '-` = 'at least`
 find . -perm /220                               find files the are either writable by the owner or group
@@ -464,6 +465,29 @@ This command traverses the filesystem 1x stores files with the SUID set and file
 find / \
          \( -perm /4000 -fprintf /root/suid.txt '%#m %u %p\n' \) , \
          \( -size +100M -fprintf /root/big.txt '%-10s %p\n' \)
+
+
+stat command
+============
+stat yields file information and among them various timestamps:
+- Access time
+- Modify time
+- Change time
+- Birth time
+
+The following commands touch different timestamps in unintuitive ways:
+touch       access
+            modify
+            change
+
+vim [read]  access
+
+vim [write] access
+            modify
+            change
+            birth
+
+chmod       change
 
 
 set
