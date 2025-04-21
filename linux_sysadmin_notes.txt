@@ -185,7 +185,7 @@ lsof +D /home -u ^alice                         show all open files in /home not
 lsof -i -a -c ssh                               show all open ssh internet files
 lsof -i :22                                     show all files, opened by an internet connection on port 22
 lsof -Pni4TCP:80                                list open IPv4 TCP connections on port 80 (-P no port names, -n no host names)
-lsof -iTCP -sTCP:LISTEN                          list open TCP connections, that are listening
+lsof -iTCP -sTCP:LISTEN                         list open TCP connections, that are listening
 lsof -i 4 /mnt/wp-content                       list the IPv4 address of all open files in this folder
 
 
@@ -511,7 +511,7 @@ sed -n -e '1p' -e '10p' -e '$p' /etc/passwd     list 1st, 10th and last line of 
 sed 's/-/./g' <<< $(date +%Y-%m-%d)             substitute current date with dashes replaced by dots
 sed 's/./\L&/g' file.txt                        turn all characters to lower case in file.txt
 sed 's/./\U&/g' file.txt                        turn all characters to upper case in file.txt
-sed -i.BAK '/^#/d' /etc/sshd/ssh.conf          remove all lines starting with a #, and save backup of the original with suffix .BAK
+sed -i.BAK '/^#/d' /etc/sshd/ssh.conf           remove all lines starting with a #, and save backup of the original with suffix .BAK
 
 
 awk
@@ -775,7 +775,7 @@ sudo apt install -t bookworm-backports <package-name>
 Add Ubuntu repo to Debian
 -------------------------
 deb http://archive.ubuntu.com/ubuntu/ jammy universe  >  /etc/apt/sources.list
-sudo apt update		(get <PUBKEY> number from error message
+sudo apt update		(get <PUBKEY> number from error message)
 sudo gpg --keryserver pgpkeys.mit.edu --recv-key <PUBKEY>
 sudo gpg -a --export <PUBKEY> | sudo tee /etc/apt/trusted.gpg.d/ubuntu_universak_key.asc
 sudo apt update
@@ -836,7 +836,7 @@ macbookpro mid-2009(5,5)
 ------------------------
 lscpi -nnks 3:00                                list details for the Broadcom Network Controller
 sudo apt install broadcom-sta-dkms              install kernel module 'wl`, i.e. the driver for the wlan adapter (add 'non-free` in /etc/apt/sources.list behind every line, apt update)
-sudo depmod                                     creat new kernel modules depency file (wl conflicts with b43, et al and adds a blacklist file in /etc/modprobe.d/broadcom-sta-dkms.conf)
+sudo depmod                                     create new kernel modules depency file (wl conflicts with b43, et al and adds a blacklist file in /etc/modprobe.d/broadcom-sta-dkms.conf)
 sudo update-initramfs -u                        update the existing initramfs file with the new blacklist
 reboot
 
@@ -948,7 +948,10 @@ sudo systemctl restart NetworkManager                                           
 Hardware Drivers
 ================
 sudo lspci -k                                   show hardware connected to PCI including driver info -> wl
-sudo lspci -vs 02:00                            show verbose info on hardware in slot 02:00
+sudo lspci -vs 03:00.0                          show verbose info on hardware at address 02:00.0 (bus:device.function / bus:slot.function)
+sudo lspci -D -s 03:00.0                        -D yields a fourth number, the domain, i.e. 0000:
+    0000:03:00.0 Network controller: Broadcom Inc. and subsidiaries BCM43602 802.11ac Wireless LAN SoC (rev 01)
+
 sudo lsmod | grep wl                            show loaded driver and dependents
 modinfo wl                                      show driver info, including parameters
 modinfo -p wl                                   show driver parameters only
@@ -1125,50 +1128,21 @@ GPG and Encryption
 
 Generating Keys
 ---------------
-By default GPG creates 1 primary key for authenticatoin/signing and 1 subkey for encryption/decryption.
+By default GPG creates 1 primary key for authentication/signing and 1 subkey for encryption/decryption.
+gpg --gen-key                                   generate keypair with current default parameters
 gpg --quick-gen-key thomasgrusz@localhost       generate standard keys with one user ID (simple command)
-gpg --gen-key                                   generate keypair with curren default parameters
 gpg --full-generate-key                         same with more flexibility (extended version of gen-key)
 
 List public keys
 ----------------
 gpg --list-public-keys                          view all public keys' metadata and the fingerprint for primary pub key (-k)
 gpg --fingerprint --fingerprint                 view ALL public keys fingerprints (primary AND subkeys)
-gpg --list-private-keys                         view private keys (same as --list-public-keys as I have both priv/publ pair, different if have only public key of pair)
+gpg --list-secret-keys                          view private keys (same as --list-public-keys as I have both priv/publ pair, different if have only public key of pair)
 
 List key-IDs
 ------------
 Key IDs are essentially abbreviations of fingerprints (short: last 8 characters of fingerprint, long: last 16 characters)
 gpg --list-public-keys --keyid-format short|long
-
-Encrypting a message
---------------------
-The default encryption is binary. The following encrypts <file> using the public key of 'userID' creating <file.gpg>:
-gpg --encrypt --recipient 'userID' <file>
-
-If you want to paste your message in an email, you need to supply an ASCII "armor". This creates an encrypted <file.asc> using carol's public key.
-gpg --encrypt --armor --recipient carol <file>
-
-You can specify the filename of the encrypted file using the '--output' option.
-
-Decrypting a message
---------------------
-gpg --decrypt <encrypted-file>                  decrypt the file to STDOUT (you have to supply the passphrase)
-gpg --output decfile.txt --decrypt enfile.txt   decrypt enfile.txt and save as decfile.txt
-
-Sign a file
------------
-gpg --sign <file>                               sign <file> using private key (file is also compressed and converted into binary), NOT ENCRYPTED, but encoded with private key
-gpg --clear-sign <file>                         create a readable, but signed message
-gpg --detach-sign <file>                        create a detached signature of <file> (used for video, audio, code files, that should not be altered by signing)
-gpg --armor --detach-sign <file>                create an ASCII encoded detached signature of <file>
-
-Verify a signed file
---------------------
-gpg --verify <signed-file>                      verifies signature of file (you have to have the public key of the signee), but you won't see the contents, unless it is 'clear-signed'
-gpg --decrypt <signed-file>                     decrypts AND verifies the signature
-gpg --verify <detached-sig> <corr_content>      verifies the detached signature of a file
-
 
 Exporting a PUBLIC key
 ---------------------
@@ -1224,7 +1198,37 @@ If you get a public key from someone and know 100% that this key is truely from 
 
 gpg --sign-key <key ID>
 
+gpg-agent
+---------
 gpg-agent --help                                show help for gpg agent
+
+Encrypting a message
+--------------------
+The default encryption is binary. The following encrypts <file> using the public key of 'userID' creating <file.gpg>:
+gpg --encrypt --recipient 'userID' <file>
+
+If you want to paste your message in an email, you need to supply an ASCII "armor". This creates an encrypted <file.asc> using carol's public key.
+gpg --encrypt --armor --recipient carol <file>
+
+You can specify the filename of the encrypted file using the '--output' option.
+
+Decrypting a message
+--------------------
+gpg --decrypt <encrypted-file>                  decrypt the file to STDOUT (you have to supply the passphrase)
+gpg --output decfile.txt --decrypt enfile.txt   decrypt enfile.txt and save as decfile.txt
+
+Sign a file
+-----------
+gpg --sign <file>                               sign <file> using private key (file is also compressed and converted into binary), NOT ENCRYPTED, but encoded with private key
+gpg --clear-sign <file>                         create a readable, but signed message
+gpg --detach-sign <file>                        create a detached signature of <file> (used for video, audio, code files, that should not be altered by signing)
+gpg --armor --detach-sign <file>                create an ASCII encoded detached signature of <file>
+
+Verify a signed file
+--------------------
+gpg --verify <signed-file>                      verifies signature of file (you have to have the public key of the signee), but you won't see the contents, unless it is 'clear-signed'
+gpg --decrypt <signed-file>                     decrypts AND verifies the signature
+gpg --verify <detached-sig> <corr_content>      verifies the detached signature of a file
 
 
 Consol Setup
