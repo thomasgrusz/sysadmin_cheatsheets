@@ -49,7 +49,7 @@ gf                                      go to file under cursor (back: <ctrl-o>)
 :below new                              open a new, empty buffer in a new window below
 :new <file>                             open file in a new window above
 :on                                     close all windows except active one
-:r                                      readi in file
+:r                                      read in file
 :view                                   open file READONLY
 :%d                                     delete all lines
 
