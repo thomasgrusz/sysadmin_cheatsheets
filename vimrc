@@ -302,6 +302,12 @@ let g:lightline = {
 \   },
 \ }
 
+" Remove trailing whitespace on save
+augroup whitespaceremoval
+    autocmd!
+    autocmd BufWritePre * %s/\s\+$//e
+augroup END
+
 " ----------------- not used -----------------
 
 "" Enable auto-indentation, copying indent from previous line
@@ -463,12 +469,6 @@ let g:lightline = {
 "    nnoremap <buffer> <leader>f :ALEFix<CR>
 "    nnoremap <buffer> <leader>] :update<CR>:terminal node %:p<CR>
 "endfunction
-"
-"" Remove trailing whitespace on save
-"augroup whitespaceremoval
-"    autocmd!
-"    autocmd BufWritePre * %s/\s\+$//e
-"augroup END
 "
 "" Open quickfix window after non-location list commands
 "autocmd QuickFixCmdPost [^l]* nested cwindow 20 | redraw!
