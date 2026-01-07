@@ -1,145 +1,110 @@
-" Set Background
+" Startup sequence for vim starts here (set in runtimepath): /etc/vim/vimrc
+
+" In /etc/vim/vimrc the following files are sourced with VIMRUNTUME=/usr/share/vim/vim91/ :
+" $VIMRUNTIME/debian.vim 
+" $VIMRUNTIME/defaults.vim	(only loaded if no ~/.vimrc)
+" ~/.vimrc
+" ~/.vim/pack/myplugins/start/*
+" $VIMRUNTIME/plugin/*
+
+" Run this command to display all sourced files in sequence:
+" :scriptnames
+
+" Run this command to display all options that have been set:
+" :set
+
+" Run this command to display all global variables:
+" :echo g:
+
+" Run this command to display all functions:
+" :function:
+
+" Run this command to display all key bindings except insert/command mode:
+" :map 
+
+" ----------------- options -----------------
+
+" Enable Vim-specific features, disabling strict vi compatibility
+" (/usr/share/vim/debian.vim)
+" set nocompatible
+
+" More powerful backspacing
+" (/usr/share/vim/debian.vim)
+" set backspace=indent,eol,start
+
+" Keep 50 lines of command line history
+" (/usr/share/vim/debian.vim)
+" set history=50
+
+" Show the cursor position all the time
+" (/usr/share/vim/debian.vim)
+" set ruler
+
+" modelines have historically been a source of security/resource
+" vulnerabilities - disable by default, even when 'nocompatible' is set
+" (/usr/share/vim/debian.vim)
+" set nomodeline
+
+" Suffixes that get lower priority when doing tab completion for filenames.
+" These are files we are not likely to want to edit or read.
+" (/usr/share/vim/debian.vim)
+" set suffixes=.bak,~,.swp,.o,.info,.aux,.log,.dvi,.bbl,.blg,.brf,.cb,.ind,.idx,.ilg,.inx,.out,.toc
+
+" Vim5 and later versions support syntax highlighting. Uncommenting the 
+" three lines below enables syntax highlighting by default.
+" (/etc/vim/vimrc)
+" if has("syntax")
+"   syntax on
+" endif
+
+" The 'syntax on' setting in /etc/vim/vimrc (above) sources multiple scripts:
+" /usr/shar/vim/vim91/syntax/syntax.vim
+" usr/share/vim/vim91/syntax/synload.vim
+" usr/share/vim/vim91/syntax/syncolor.vim
+" usr/share/vim/vim91/colors/lists/default.vim
+" /usr/share/vim/vim91/filetype.vim
+" /usr/share/vim/vim91/scripts.vim
+" /usr/share/vim/vim91/autoload/dist/script.vim
+
+" Enable filetype detection
+" (/usr/share/vim/vim91/syntax/syntax.vim)
+" filetype on
+
+" Load indentation rules and plugins according to the detected filetype
+filetype plugin indent on
+
+" When editing a file, always jump to the last known cursor position.
+" Don't do it when the position is invalid, when inside an event handler
+" (happens when dropping a file on gvim), for a commit or rebase message
+" (likely a different one than last time), and when using xxd(1) to filter
+" and edit binary files (it transforms input files back and forth, causing
+" them to have dual nature, so to speak)
+
+" Put these in an autocmd group, so that you can revert them with:
+" :autocmd! vimStartup"
+augroup vimStartup
+autocmd!
+
+autocmd BufReadPost *
+\ let line = line("'\"")
+\ | if line >= 1 && line <= line("$") && &filetype !~# 'commit'
+\      && index(['xxd', 'gitrebase'], &filetype) == -1
+\ |   execute "normal! g`\""
+\ | endif
+
+augroup END
+
+" Set background (light or dark, readability)
 set background=dark
+
 " Set colorscheme
 colorscheme gruvbox
-" Enable Vim-specific features, disabling strict vi compatibility
-set nocompatible"
 
-" Enable auto-indentation, copying indent from previous line
-set autoindent
+" Show partial commands in status line (bottom-right)
+set showcmd
 
-" Exclude #include files from completion to speed up
-set complete-=i
-
-" Insert tabs as spaces when at start of line
-set smarttab
-
-" Convert tabs to spaces
-set expandtab
-
-" Set tab width to 2 spaces
-set tabstop=2
-
-" Set soft tab (spaces) width to 2
-set softtabstop=2
-
-" Set indentation width to 2 spaces (auto indent, >>, <<, =
-" If shiftwidth is set to 0, Vim uses the value of tabstop instead.
-set shiftwidth=0
-
-" Exclude octal from number formats (e.g., for increment/decrement)
-set nrformats-=octal
-
-" Enable timeout for key sequences
-set ttimeout
-
-" Set timeout length for key sequences to 100ms
-set ttimeoutlen=100
-
-" Highlight search matches as you type
-set incsearch
-
-" Always show status line (0=never, 1=default=show if 2+ windows)
-set laststatus=2
-
-" Enable enhanced command-line completion menu
-set wildmenu
-
-" Keep X lines visible above/below cursor
-set scrolloff=4
-
-" Keep X columns visible left/right of cursor
-set sidescrolloff=5
-
-" Display last line even if too long
-set display+=lastline
-
-" Customize invisible character display (tabs, trailing spaces, etc.)
-set listchars=tab:>\ ,trail:-,extends:>,precedes:<,nbsp:+
-
-" Allow joining lines with comments cleanly
-set formatoptions+=j
-
-" Include gems.tags file for tag searches
-set tags+=gems.tags
-
-" Store up to 1000 command-line history entries
-set history=1000
-
-" Allow up to 50 tabs (=tab pages opened)
-set tabpagemax=50
-
-" Include ! for viminfo to save uppercase marks
-set viminfo^=!
-
-" Store file marks in viminfo
-set viminfo+=f1
-
-" Exclude options from session saving
-set sessionoptions-=options
-
-" Exclude options from view saving
-set viewoptions-=options
-
-" Enable true color support in terminal
-set termguicolors
-
-" Set backup directory (must exist)
-let &backupdir = '/home/thomasgrusz/.local/share/vim/backup//'
-
-" Set undo directory (must exist)
-let &undodir = '/home/thomasgrusz/.local/share/vim/undodir//'
-
-" Enable persistent undo
-set undofile
-
-" Enable mouse support in all modes
-set mouse=a
-
-" Show line numbers
-set number
-
-" Highlight current line
-set cursorline
-
-" Highlight only the line number for cursorline
-set cursorlineopt=number
-
-" Set minimum window width to 79 columns
-set winwidth=79
-
-" Set minimum window height to 5 lines
-set winheight=5
-
-" Set minimum height for inactive windows to 5 lines
-set winminheight=5
-
-" Complete longest match first, then show full menu
-set wildmode=longest,full
-
-" Ignore object files, git, and other temporary files
-set wildignore+=*.o,*.out,*.obj,.git,*.rbc,*.rbo,*.class,.svn,*.gem
-
-" Ignore compressed archives
-set wildignore+=*.zip,*.tar.gz,*.tar.bz2,*.rar,*.tar.xz
-
-" Ignore vendor and cache directories
-set wildignore+=*/vendor/gems/*,*/vendor/cache/*,*/.bundle/*,*/.sass-cache/*
-
-" Ignore swap and backup files
-set wildignore+=*.swp,*~,._*
-
-" Set fold method to indent-based (commented out)
-"set foldmethod=indent
-
-" Limit fold nesting to 3 levels
-set foldnestmax=3
-
-" Disable folding by default
-set nofoldenable
-
-" Highlight search matches
-set hlsearch
+" Show matching brackets
+set showmatch
 
 " Make searches case-insensitive
 set ignorecase
@@ -147,47 +112,61 @@ set ignorecase
 " Override ignorecase if search contains uppercase
 set smartcase
 
-" Include hyphen in keywords for word boundaries
-set iskeyword+=-
+" Highlight search matches as you type
+set incsearch
 
-" Open vertical splits to the right
-set splitright
-
-" Open horizontal splits below
-set splitbelow
-
-" Suppress intro message
-set shortmess+=I
-
-" Show partial commands in bottom-right
-set showcmd
-
-" Use existing tab if buffer is open
-set switchbuf=usetab
+" Automatically save before commands like :next and :make
+"set autowrite
 
 " Allow switching buffers without saving
 set hidden
 
-" Wrap lines at word boundaries
-set linebreak
+" Enable mouse support in all modes
+set mouse=a
 
-" Show one space as wrap indicator on next line
-set showbreak=" "
+" Enable enhanced command-line completion menu
+set wildmenu
 
-" Suppress swap file attention message (commented out)
-"set shortmess+=A
+" Complete longest match first, then show full menu
+"set wildmode=longest,full
 
-" Set idle time for swap file updates to 1500ms
-set updatetime=1500
+" Ignore object files, git, and other temporary files
+"set wildignore+=*.o,*.out,*.obj,.git,*.rbc,*.rbo,*.class,.svn,*.gem
 
-" Use git grep for :grep command
-set gp=git\ grep\ -n
+" Ignore compressed archives
+"set wildignore+=*.zip,*.tar.gz,*.tar.bz2,*.rar,*.tar.xz
 
-" Start new undo block before Ctrl+U in insert mode
-inoremap <C-U> <C-G>u<C-U>
+" Ignore vendor and cache directories
+"set wildignore+=*/vendor/gems/*,*/vendor/cache/*,*/.bundle/*,*/.sass-cache/*
 
-" Start new undo block before Ctrl+W in insert mode
-inoremap <C-W> <C-G>u<C-W>
+" Ignore swap and backup files
+"set wildignore+=*.swp,*~,._*
+
+" Wait up to 100ms after first key in key-mappings
+set timeoutlen=500
+
+" Enable timeout for key codes
+set ttimeout
+
+" Wait up to 100ms after Esc for special key
+set ttimeoutlen=100
+
+" Show @@@ in the last line if it is truncated
+"set display=truncate
+
+" Keep X lines visible above/below the cursor
+set scrolloff=4
+
+" Exclude octal from number formats (e.g., for increment/decrement)
+set nrformats-=octal
+
+" Disable Q for Ex mode
+nnoremap Q <nop>
+
+" CTRL-U in insert mode deletes a lot.  Use CTRL-G u to first break undo,
+" so that you can undo CTRL-U after inserting a line break.
+" Revert with ":iunmap <C-U>".
+"inoremap <C-U> <C-G>u<C-U>
 
 " Map jj to escape in insert mode
 inoremap jj <esc>
@@ -195,68 +174,11 @@ inoremap jj <esc>
 " Copy to end of line with Y in normal mode
 nnoremap Y y$
 
-" Repeat last substitution with flags
-nnoremap & :&&<CR>
-
-" Repeat last substitution with flags in visual mode
-xnoremap & :&&<CR>
-
-" Move down display lines in visual mode
-vmap j gj
-
-" Move up display lines in visual mode
-vmap k gk
-
-" Move down display lines in normal mode
-nmap j gj
-
-" Move up display lines in normal mode
-nmap k gk
-
 " Center screen on next search match
 noremap n nzz
 
 " Center screen on previous search match
 noremap N Nzz
-
-" Visually select last changed/yanked text
-noremap gV `[v`]
-
-" Restore cursor position after yank in visual mode
-vnoremap <silent> y y`]
-
-" Restore cursor position after paste in normal mode
-nnoremap <silent> p p`]
-
-" Expand %% to current file's directory in command mode
-cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
-
-" Clear search highlight and update diff
-nnoremap <silent> <C-P> :nohlsearch<C-R>=has('diff')?'<Bar>diffupdate':''<CR><CR><C-L>
-
-" Set swap file directory
-let &directory = '/home/thomasgrusz/.vim' . '//,' . &directory
-
-" Auto-check for file changes on focus or buffer enter
-au FocusGained,BufEnter,CursorHold,CursorHoldI * if !bufexists("[Command Line]") | checktime | endif
-
-" Move to left window
-map <C-h> <C-w>h
-
-" Move to bottom window
-map <C-j> <C-w>j
-
-" Move to top window
-map <C-k> <C-w>k
-
-" Move to right window
-map <C-l> <C-w>l
-
-" Set leader key to backslash
-let mapleader = "\\"
-
-" Open vertical terminal with leader + backslash
-nnoremap <leader>\ :vertical terminal<CR>
 
 " Map space to enter command mode
 nnoremap <space> :
@@ -285,6 +207,89 @@ xnoremap <silent> <Esc>k :m-2<CR>gv=gv
 " Move selected lines down in visual mode
 xnoremap <silent> <Esc>j :m'>+<CR>gv=gv
 
+" Move down display (wrapped) lines in normal mode
+nmap j gj
+
+" Move up display (wrapped) lines in normal mode
+nmap k gk
+
+" Move down display (wrapped) lines in visual mode
+vmap j gj
+
+" Move up display (wrapped) lines in visual mode
+vmap k gk
+
+" Move to left window
+map <C-h> <C-w>h
+
+" Move to bottom window
+map <C-j> <C-w>j
+
+" Move to top window
+map <C-k> <C-w>k
+
+" Move to right window
+map <C-l> <C-w>l
+
+" Restore cursor position after yank in visual mode
+vnoremap <silent> y y`]
+
+" Set leader key to backslash
+let mapleader = "\\"
+
+" Open vertical terminal with leader + backslash
+nnoremap <leader>\ :vertical terminal<CR>
+
+" Enable true color support in terminal
+set termguicolors
+
+" Define 16 ANSI colors for terminal
+let g:terminal_ansi_colors = [
+  \ '#000000', '#cc0000', '#4e9a06', '#c4a000',
+  \ '#3465a4', '#75507b', '#06989a', '#d3d7cf',
+  \ '#555753', '#ef2929', '#8ae234', '#fce94f',
+  \ '#729fcf', '#ad7fa8', '#34e2e2', '#eeeeec'
+  \ ]
+
+" Set terminal foreground and background colors
+"highlight Terminal guifg=#ebdbb2 guibg=#282828
+
+" Show line numbers
+set number
+
+" Highlight current line
+set cursorline
+
+" Highlight only the line number for cursorline
+set cursorlineopt=number
+
+" Always show status line (0=never, 1=default=only if 2+ windows, 2=always)
+set laststatus=2
+
+" Highlight search matches
+set hlsearch
+
+" Clear search highlight and update diff
+nnoremap <silent> <C-P> :nohlsearch<C-R>=has('diff')?'<Bar>diffupdate':''<CR><CR><C-L>
+
+" Open vertical splits to the right
+set splitright
+
+" Open horizontal splits below
+set splitbelow
+
+" Suppress intro message
+set shortmess+=I
+
+" Wrap lines at word boundaries
+set linebreak
+
+" Use break indicator at beginning of wrapped line
+set breakindent
+
+" Show an arrow and space as wrap indicator on next line
+let &showbreak='> '
+
 " Configure lightline plugin with wombat colorscheme
 let g:lightline = {
 \   'colorscheme': 'wombat',
@@ -297,87 +302,179 @@ let g:lightline = {
 \   },
 \ }
 
-" Configure ALE linters for specific filetypes
-let g:ale_linters = {
-\   'python': ['flake8'],
-\   'javascript': ['eslint'],
-\   'html': ['tidy', 'eslint'],
-\ }
+" ----------------- not used -----------------
 
-" Configure ALE fixers for specific filetypes
-let g:ale_fixers = {
-\    'python': ['autopep8'],
-\    'javascript': ['eslint'],
-\    'html': ['tidy'],
-\ }
-
-" Define 16 ANSI colors for terminal
-let g:terminal_ansi_colors = [
-  \ '#000000', '#cc0000', '#4e9a06', '#c4a000',
-  \ '#3465a4', '#75507b', '#06989a', '#d3d7cf',
-  \ '#555753', '#ef2929', '#8ae234', '#fce94f',
-  \ '#729fcf', '#ad7fa8', '#34e2e2', '#eeeeec'
-  \ ]
-
-" Set terminal foreground and background colors
-highlight Terminal guifg=#ebdbb2 guibg=#282828
-
-" Define custom Grep command using silent grep
-command! -nargs=+ Grep silent grep! <args>
-
-" Set up Python development environment
-augroup PythonSettings
-    autocmd!
-    autocmd FileType python call s:LoadPythonDevEnvironment()
-augroup END
-
-" Load Python-specific plugins and mappings
-function! s:LoadPythonDevEnvironment()
-    packadd ale         " Load linter plugin
-    packadd jedi-vim    " Load Python syntax plugin
-    nnoremap <buffer> <leader>f :ALEFix<CR>
-    nnoremap <buffer> <leader>] :update<CR>:terminal python3 %:p<CR>
-endfunction
-
-" Set up HTML/CSS development environment
-augroup HTMLCSSSettings
-    autocmd!
-    autocmd FileType html,css call s:htmlAndCss()
-augroup END
-
-" Load HTML/CSS-specific plugins and mappings
-function! s:htmlAndCss()
-    packadd ale             " Load linter plugin
-    packadd emmet-vim       " Load emmet plugin
-    packadd vim-css-color   " Load css color plugin
-    nnoremap <buffer> <leader>f :ALEFix<CR>
-    nnoremap <buffer> <leader>l :terminal browser-sync -w<CR>
-endfunction
-
-" Set up JavaScript development environment
-augroup JavaScriptSettings
-    autocmd!
-    autocmd FileType javascript call s:jsSettings()
-augroup END
-
-" Load JavaScript-specific plugins and mappings
-function! s:jsSettings()
-    packadd ale
-    nnoremap <buffer> <leader>f :ALEFix<CR>
-    nnoremap <buffer> <leader>] :update<CR>:terminal node %:p<CR>
-endfunction
-
-" Remove trailing whitespace on save
-augroup whitespaceremoval
-    autocmd!
-    autocmd BufWritePre * %s/\s\+$//e
-augroup END
-
-" Open quickfix window after non-location list commands
-autocmd QuickFixCmdPost [^l]* nested cwindow 20 | redraw!
-
-" Close quickfix window after selecting an item
-autocmd FileType qf nnoremap <buffer> <CR> <CR>:cclose<CR>
+"" Enable auto-indentation, copying indent from previous line
+"set autoindent
+"
+"" Insert tabs as spaces when at start of line
+"set smarttab
+"
+"" Convert tabs to spaces
+"set expandtab
+"
+"" Set tab width to 2 spaces
+"set tabstop=2
+"
+"" Set soft tab (spaces) width to 2
+"set softtabstop=2
+"
+"" Set indentation width to 2 spaces (auto indent, >>, <<, =
+"" If shiftwidth is set to 0, Vim uses the value of tabstop instead.
+"set shiftwidth=0
+"
+"" Exclude #include files from completion to speed up
+"set complete-=i
+"
+"" Customize invisible character display (tabs, trailing spaces, etc.)
+"set listchars=tab:>\ ,trail:-,extends:>,precedes:<,nbsp:+
+"
+"" Allow joining lines with comments cleanly
+"set formatoptions+=j
+"
+"" Include gems.tags file for tag searches
+"set tags+=gems.tags
+"
+"" Allow up to 50 tabs (=tab pages opened)
+"set tabpagemax=50
+"
+"" Include ! for viminfo to save uppercase marks
+"set viminfo^=!
+"
+"" Store file marks in viminfo
+"set viminfo+=f1
+"
+"" Exclude options from session saving
+"set sessionoptions-=options
+"
+"" Exclude options from view saving
+"set viewoptions-=options
+"
+"" Set backup directory (must exist)
+"let &backupdir = expand('$HOME') . '/.local/share/vim/backup//'
+"
+"" Set undo directory (must exist)
+"let &undodir = expand('$HOME') . '/.local/share/vim/undodir//'
+"
+"" Enable persistent undo
+"set undofile
+"
+"" Set fold method to indent-based (commented out)
+""set foldmethod=indent
+"
+"" Limit fold nesting to 3 levels
+"set foldnestmax=3
+"
+"" Disable folding by default
+"set nofoldenable
+"
+"" Include hyphen in keywords for word boundaries
+"set iskeyword+=-
+"
+"" Use existing tab if buffer is open
+"set switchbuf=usetab
+"
+"" Suppress swap file attention message (commented out)
+""set shortmess+=A
+"
+"" Set idle time for swap file updates to 1500ms
+"set updatetime=1500
+"
+"" Use git grep for :grep command
+"set gp=git\ grep\ -n
+"
+"" Repeat last substitution with flags
+"nnoremap & :&&<CR>
+"
+"" Repeat last substitution with flags in visual mode
+"xnoremap & :&&<CR>
+"
+"" Visually select last changed/yanked text
+"noremap gV `[v`]
+"
+"" Expand %% to current file's directory in command mode
+"cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
+"
+"" Set swap file directory
+"let &directory = '/home/thomasgrusz/.vim' . '//,' . &directory
+"
+"" Auto-check for file changes on focus or buffer enter
+"au FocusGained,BufEnter,CursorHold,CursorHoldI * if !bufexists("[Command Line]") | checktime | endif
+"
+"" C boiler plate shortcut -> /s
+""nnoremap <leader>c 1Gi#include <stdio.h><CR><CR>int main(int argc, char *argv[]) {<CR><CR><Tab>return 0;<CR><BS>}<Esc>2ki<Tab>
+"nnoremap <leader>c 1Gi#include <stdio.h><CR><CR>int main(int argc, char *argv[]) {<CR><CR><Tab>return 0;<CR><BS>}<Esc>2ki<Tab>
+"
+"" Configure ALE linters for specific filetypes
+"let g:ale_linters = {
+"\   'python': ['flake8'],
+"\   'javascript': ['eslint'],
+"\   'html': ['tidy', 'eslint'],
+"\ }
+"
+"" Configure ALE fixers for specific filetypes
+"let g:ale_fixers = {
+"\    'python': ['autopep8'],
+"\    'javascript': ['eslint'],
+"\    'html': ['tidy'],
+"\ }
+"
+"" Define custom Grep command using silent grep
+"command! -nargs=+ Grep silent grep! <args>
+"
+"" Set up Python development environment
+"augroup PythonSettings
+"    autocmd!
+"    autocmd FileType python call s:LoadPythonDevEnvironment()
+"augroup END
+"
+"" Load Python-specific plugins and mappings
+"function! s:LoadPythonDevEnvironment()
+"    packadd ale         " Load linter plugin
+"    packadd jedi-vim    " Load Python syntax plugin
+"    nnoremap <buffer> <leader>f :ALEFix<CR>
+"    nnoremap <buffer> <leader>] :update<CR>:terminal python3 %:p<CR>
+"endfunction
+"
+"" Set up HTML/CSS development environment
+"augroup HTMLCSSSettings
+"    autocmd!
+"    autocmd FileType html,css call s:htmlAndCss()
+"augroup END
+"
+"" Load HTML/CSS-specific plugins and mappings
+"function! s:htmlAndCss()
+"    packadd ale             " Load linter plugin
+"    packadd emmet-vim       " Load emmet plugin
+"    packadd vim-css-color   " Load css color plugin
+"    nnoremap <buffer> <leader>f :ALEFix<CR>
+"    nnoremap <buffer> <leader>l :terminal browser-sync -w<CR>
+"endfunction
+"
+"" Set up JavaScript development environment
+"augroup JavaScriptSettings
+"    autocmd!
+"    autocmd FileType javascript call s:jsSettings()
+"augroup END
+"
+"" Load JavaScript-specific plugins and mappings
+"function! s:jsSettings()
+"    packadd ale
+"    nnoremap <buffer> <leader>f :ALEFix<CR>
+"    nnoremap <buffer> <leader>] :update<CR>:terminal node %:p<CR>
+"endfunction
+"
+"" Remove trailing whitespace on save
+"augroup whitespaceremoval
+"    autocmd!
+"    autocmd BufWritePre * %s/\s\+$//e
+"augroup END
+"
+"" Open quickfix window after non-location list commands
+"autocmd QuickFixCmdPost [^l]* nested cwindow 20 | redraw!
+"
+"" Close quickfix window after selecting an item
+"autocmd FileType qf nnoremap <buffer> <CR> <CR>:cclose<CR>
 
 "===============================================================================
 " %s/\Csearchterm/replacement/g - force case-sensitive searches (\C)
@@ -425,3 +522,4 @@ autocmd FileType qf nnoremap <buffer> <CR> <CR>:cclose<CR>
 " Also make sure that the 'tidy' package is installed on the system.
 " This package is needed by the vim plugin for 'ale' for html linting.
 "       'sudo apt install tidy'
+
